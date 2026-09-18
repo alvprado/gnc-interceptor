@@ -1,0 +1,4 @@
+CLAUDE.md
+build/
+compile_commands.json
+.cache/
