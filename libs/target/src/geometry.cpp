@@ -18,12 +18,12 @@ PlaneBasis planeBasis(Eigen::Vector3d const& normal, Eigen::Vector3d const& refe
 
 double turnRadius(double speed_mps, double load_factor) noexcept
 {
-    return speed_mps * speed_mps / (std::abs(load_factor) * math::k_gravity_mps2);
+    return speed_mps * speed_mps / (std::abs(load_factor) * math::gravity_mps2);
 }
 
 double angularRate(double speed_mps, double load_factor) noexcept
 {
-    return load_factor * math::k_gravity_mps2 / speed_mps;
+    return load_factor * math::gravity_mps2 / speed_mps;
 }
 
 }  // namespace detail

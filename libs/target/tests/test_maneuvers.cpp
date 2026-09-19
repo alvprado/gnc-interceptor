@@ -92,8 +92,8 @@ protected:
     Eigen::Vector3d const center_{100.0, 200.0, 0.0};
     double const speed_mps_{150.0};
     double const load_factor_{3.0};
-    double const radius_m_{speed_mps_ * speed_mps_ / (load_factor_ * math::k_gravity_mps2)};
-    double const rate_rps_{load_factor_ * math::k_gravity_mps2 / speed_mps_};
+    double const radius_m_{speed_mps_ * speed_mps_ / (load_factor_ * math::gravity_mps2)};
+    double const rate_rps_{load_factor_ * math::gravity_mps2 / speed_mps_};
     Circle const traj_{center_, speed_mps_, load_factor_, Eigen::Vector3d(0, 0, 1),
                        Eigen::Vector3d(1, 0, 0)};
 };
@@ -154,7 +154,7 @@ TEST(CircleGeneralPlaneTest, HoldsExactRadiusForAnArbitraryNonAxisAlignedPlane)
     // general Gram-Schmidt path in planeBasis rather than an axis-aligned one.
     double const speed_mps = 175.0, load_factor = 2.0;
     double const radius_m =
-        speed_mps * speed_mps / (load_factor * math::k_gravity_mps2);
+        speed_mps * speed_mps / (load_factor * math::gravity_mps2);
     Circle const traj{{0, 0, 0}, speed_mps, load_factor, Eigen::Vector3d(0.3, 0.5, 0.8),
                       Eigen::Vector3d(1, 0, 0)};
 
@@ -241,8 +241,8 @@ protected:
     double const climb_angle_rad_{15.0 * std::numbers::pi / 180.0};
     double const horizontal_speed_mps_{speed_mps_ * std::cos(climb_angle_rad_)};
     double const radius_m_{horizontal_speed_mps_ * horizontal_speed_mps_ /
-                           (load_factor_ * math::k_gravity_mps2)};
-    double const rate_rps_{load_factor_ * math::k_gravity_mps2 / horizontal_speed_mps_};
+                           (load_factor_ * math::gravity_mps2)};
+    double const rate_rps_{load_factor_ * math::gravity_mps2 / horizontal_speed_mps_};
     double const climb_rate_mps_{speed_mps_ * std::sin(climb_angle_rad_)};
     Helix const traj_{center_,        speed_mps_,       load_factor_, climb_angle_rad_,
                       Eigen::Vector3d(0, 0, 1), Eigen::Vector3d(1, 0, 0)};

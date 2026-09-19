@@ -13,7 +13,7 @@ namespace simulation
 struct UAV3DofModelParams
 {
     double mass_kg{5.0};                          ///< Vehicle mass in kg.
-    double rho_kgpm3{math::k_air_density_kgpm3};  ///< Air density in kg/m^3.
+    double rho_kgpm3{math::air_density_kgpm3};  ///< Air density in kg/m^3.
     double frontal_area_m2{0.1};                  ///< Reference frontal area in m^2.
     double drag_coeff{0.08};                      ///< Dimensionless drag coefficient.
 };
@@ -28,9 +28,6 @@ struct UAV3DofModelLimits
     double max_bank_angle_rad{std::numbers::pi};  ///< Maximum |bank angle| in rad.
     double min_speed_mps{1.0};                    ///< Minimum speed in m/s.
     double max_speed_mps{300.0};                  ///< Maximum speed in m/s.
-
-    /// Maximum |flight-path angle| in rad; keeps the state clear of vertical.
-    double max_flight_path_angle_rad{80.0 * std::numbers::pi / 180.0};
 };
 
 /// @brief 3-DOF point-mass UAV model supplying the continuous dynamics
@@ -63,7 +60,8 @@ public:
     /// @returns The control limited to the envelope.
     [[nodiscard]] ControlVec clampControl(ControlVec const& control) const noexcept;
 
-    /// @brief Clamp a state to the flight envelope.
+    /// @brief Clamp a state to the flight envelope, wrapping heading and
+    /// flight-path angle into (-pi, pi].
     /// @param[in] state The state to limit.
     /// @returns The state limited to the envelope.
     [[nodiscard]] StateVec clampState(StateVec const& state) const noexcept;

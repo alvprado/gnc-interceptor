@@ -2,3 +2,5 @@ CLAUDE.md
 build/
 compile_commands.json
 .cache/
+standalone/outputs/
+__pycache__/

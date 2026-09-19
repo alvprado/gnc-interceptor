@@ -79,7 +79,7 @@ TEST_F(UAV3DofModelTest, SpeedRateIsThrustMinusDragMinusGravity)
         model_(make_state(0.0, 0.0, 0.0, v, 0.0, gamma), make_control(thrust, 1.0, 0.0));
 
     double const expected = (thrust - drag_at(params_, v)) / params_.mass_kg -
-                            math::k_gravity_mps2 * std::sin(gamma);
+                            math::gravity_mps2 * std::sin(gamma);
     EXPECT_NEAR(dx[3], expected, k_tol);
 }
 
@@ -188,30 +188,36 @@ TEST_F(UAV3DofModelTest, ClampStateLeavesFeasibleStatesUntouched)
     EXPECT_TRUE(model_.clampState(x).isApprox(x));
 }
 
-TEST_F(UAV3DofModelTest, ClampStateLimitsSpeedAndFlightPathAngle)
+TEST_F(UAV3DofModelTest, ClampStateLimitsSpeed)
 {
     auto const slow = model_.clampState(make_state(0.0, 0.0, 0.0, -50.0, 0.0, 0.0));
     EXPECT_DOUBLE_EQ(slow[3], limits_.min_speed_mps);
 
     auto const fast = model_.clampState(make_state(0.0, 0.0, 0.0, 1.0e4, 0.0, 0.0));
     EXPECT_DOUBLE_EQ(fast[3], limits_.max_speed_mps);
-
-    auto const steep = model_.clampState(make_state(0.0, 0.0, 0.0, 100.0, 0.0, k_half_pi));
-    EXPECT_DOUBLE_EQ(steep[5], limits_.max_flight_path_angle_rad);
-
-    auto const dive = model_.clampState(make_state(0.0, 0.0, 0.0, 100.0, 0.0, -k_half_pi));
-    EXPECT_DOUBLE_EQ(dive[5], -limits_.max_flight_path_angle_rad);
 }
 
-TEST_F(UAV3DofModelTest, ClampStateLeavesPositionAndHeadingAlone)
+TEST_F(UAV3DofModelTest, ClampStateWrapsHeadingAndFlightPathAngle)
 {
-    auto const x = make_state(1.0e4, -2.0e4, 3.0e3, 1.0e4, 40.0, 0.0);
+    // Neither angle is truncated: gamma continues past +-pi/2 (e.g. through a
+    // vertical loop) and simply re-enters the principal range on the far side.
+    auto const wrapped_gamma =
+        model_.clampState(make_state(0.0, 0.0, 0.0, 100.0, 0.0, std::numbers::pi + 0.3));
+    EXPECT_NEAR(wrapped_gamma[5], -(std::numbers::pi - 0.3), k_tol);
+
+    auto const wrapped_psi =
+        model_.clampState(make_state(0.0, 0.0, 0.0, 100.0, 2.0 * std::numbers::pi + 0.5, 0.0));
+    EXPECT_NEAR(wrapped_psi[4], 0.5, k_tol);
+}
+
+TEST_F(UAV3DofModelTest, ClampStateLeavesPositionAlone)
+{
+    auto const x = make_state(1.0e4, -2.0e4, 3.0e3, 1.0e4, 0.4, 0.0);
     auto const clamped = model_.clampState(x);
 
     EXPECT_DOUBLE_EQ(clamped[0], x[0]);
     EXPECT_DOUBLE_EQ(clamped[1], x[1]);
     EXPECT_DOUBLE_EQ(clamped[2], x[2]);
-    EXPECT_DOUBLE_EQ(clamped[4], x[4]) << "heading is not wrapped by the model";
 }
 
 }  // namespace

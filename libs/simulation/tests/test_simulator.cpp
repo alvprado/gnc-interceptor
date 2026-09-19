@@ -152,7 +152,7 @@ TEST_F(SimulatorTest, StepKeepsTheStateInsideTheEnvelope)
         ASSERT_TRUE(x.allFinite()) << "diverged at step " << i;
         EXPECT_GE(x[3], limits_.min_speed_mps);
         EXPECT_LE(x[3], limits_.max_speed_mps);
-        EXPECT_LE(std::abs(x[5]), limits_.max_flight_path_angle_rad);
+        EXPECT_LE(std::abs(x[5]), std::numbers::pi) << "gamma stays wrapped into (-pi, pi]";
     }
 }
 
@@ -163,7 +163,6 @@ TEST_F(SimulatorTest, ClampingDoesNotPerturbFlightInsideTheEnvelope)
     wide.max_load_factor = 1.0e3;
     wide.min_speed_mps = 1.0e-6;
     wide.max_speed_mps = 1.0e6;
-    wide.max_flight_path_angle_rad = k_half_pi;
     UAV3DofModel const unrestricted{params_, wide};
 
     auto const x0 = make_state(0.0, 0.0, 0.0, 120.0, 0.3, 0.1);
