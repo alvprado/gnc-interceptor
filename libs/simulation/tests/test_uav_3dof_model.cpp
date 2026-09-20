@@ -197,17 +197,20 @@ TEST_F(UAV3DofModelTest, ClampStateLimitsSpeed)
     EXPECT_DOUBLE_EQ(fast[3], limits_.max_speed_mps);
 }
 
-TEST_F(UAV3DofModelTest, ClampStateWrapsHeadingAndFlightPathAngle)
+TEST_F(UAV3DofModelTest, ClampStateWrapsHeadingAndClampsFlightPathAngle)
 {
-    // Neither angle is truncated: gamma continues past +-pi/2 (e.g. through a
-    // vertical loop) and simply re-enters the principal range on the far side.
-    auto const wrapped_gamma =
-        model_.clampState(make_state(0.0, 0.0, 0.0, 100.0, 0.0, std::numbers::pi + 0.3));
-    EXPECT_NEAR(wrapped_gamma[5], -(std::numbers::pi - 0.3), k_tol);
-
+    // Heading is periodic and wraps; flight-path angle is bounded by
+    // definition (it's the velocity vector's elevation) and is clamped, not
+    // wrapped - there is no "other side" to wrap to.
     auto const wrapped_psi =
         model_.clampState(make_state(0.0, 0.0, 0.0, 100.0, 2.0 * std::numbers::pi + 0.5, 0.0));
     EXPECT_NEAR(wrapped_psi[4], 0.5, k_tol);
+
+    auto const steep = model_.clampState(make_state(0.0, 0.0, 0.0, 100.0, 0.0, k_half_pi + 0.3));
+    EXPECT_DOUBLE_EQ(steep[5], k_half_pi);
+
+    auto const dive = model_.clampState(make_state(0.0, 0.0, 0.0, 100.0, 0.0, -k_half_pi - 0.3));
+    EXPECT_DOUBLE_EQ(dive[5], -k_half_pi);
 }
 
 TEST_F(UAV3DofModelTest, ClampStateLeavesPositionAlone)

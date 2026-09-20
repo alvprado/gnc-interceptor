@@ -1,10 +1,9 @@
 #pragma once
 
-#include "math/constants.hpp"
-
 #include <Eigen/Dense>
-
 #include <numbers>
+
+#include "math/constants.hpp"
 
 namespace simulation
 {
@@ -12,10 +11,10 @@ namespace simulation
 /// @brief Physical parameters of the 3-DOF point-mass UAV model.
 struct UAV3DofModelParams
 {
-    double mass_kg{5.0};                          ///< Vehicle mass in kg.
+    double mass_kg{5.0};                        ///< Vehicle mass in kg.
     double rho_kgpm3{math::air_density_kgpm3};  ///< Air density in kg/m^3.
-    double frontal_area_m2{0.1};                  ///< Reference frontal area in m^2.
-    double drag_coeff{0.08};                      ///< Dimensionless drag coefficient.
+    double frontal_area_m2{0.1};                ///< Reference frontal area in m^2.
+    double drag_coeff{0.08};                    ///< Dimensionless drag coefficient.
 };
 
 /// @brief Operational envelope of the 3-DOF point-mass UAV model.
@@ -45,8 +44,7 @@ public:
     /// @brief Construct the model from its physical parameters and limits.
     /// @param[in] params The parameters the dynamics are evaluated with.
     /// @param[in] limits The envelope the state and control are clamped to.
-    explicit UAV3DofModel(UAV3DofModelParams const& params,
-                          UAV3DofModelLimits const& limits = {});
+    explicit UAV3DofModel(UAV3DofModelParams const& params, UAV3DofModelLimits const& limits = {});
 
     /// @brief Evaluate the continuous dynamics ẋ = f(x, u).
     /// @param[in] state The state to evaluate the dynamics at.
@@ -60,8 +58,9 @@ public:
     /// @returns The control limited to the envelope.
     [[nodiscard]] ControlVec clampControl(ControlVec const& control) const noexcept;
 
-    /// @brief Clamp a state to the flight envelope, wrapping heading and
-    /// flight-path angle into (-pi, pi].
+    /// @brief Clamp a state to the flight envelope: speed to its operational
+    /// range, heading wrapped into (-pi, pi], and flight-path angle clamped
+    /// to [-pi/2, pi/2]
     /// @param[in] state The state to limit.
     /// @returns The state limited to the envelope.
     [[nodiscard]] StateVec clampState(StateVec const& state) const noexcept;

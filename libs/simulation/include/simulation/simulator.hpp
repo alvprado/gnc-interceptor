@@ -1,8 +1,8 @@
 #pragma once
 
-#include "math/concepts.hpp"
-
 #include <concepts>
+
+#include "math/concepts.hpp"
 
 namespace simulation
 {
@@ -41,14 +41,14 @@ public:
     /// scheme.
     /// @param[in] model The model supplying the dynamics ẋ = f(x, u).
     /// @param[in] integrator The integration policy applied at every step.
-    UAVSimulator(Model_T const &model, Integrator_T const &integrator);
+    UAVSimulator(Model_T const& model, Integrator_T const& integrator);
 
     /// @brief Advance the state by one timestep.
     /// @param[in] state The state at the start of the step.
     /// @param[in] control The control held constant over the step.
     /// @param[in] dt The timestep.
     /// @returns The state advanced by one timestep.
-    [[nodiscard]] StateVec step(StateVec const &state, ControlVec const &control,
+    [[nodiscard]] StateVec step(StateVec const& state, ControlVec const& control,
                                 Scalar dt) const noexcept;
 
 private:

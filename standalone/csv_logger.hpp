@@ -1,7 +1,7 @@
 #pragma once
 
+#include "math/cartesian_state.hpp"
 #include "simulation/uav_3dof_model.hpp"
-#include "target/concepts.hpp"
 
 #include <fstream>
 #include <iomanip>
@@ -14,7 +14,7 @@ struct TrajectorySample
 {
     double time_s{0.0};
     simulation::UAV3DofModel::StateVec interceptor_state;
-    target::TargetState target_state;
+    math::CartesianState target_state;
 };
 
 /// @brief Write a run of interceptor/target samples to CSV.

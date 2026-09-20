@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 
 #include "math/angles.hpp"
 #include "math/constants.hpp"
@@ -73,7 +74,7 @@ UAV3DofModel::StateVec UAV3DofModel::clampState(StateVec const& state) const noe
     StateVec clamped = state;
     clamped[3] = std::clamp(state[3], limits_.min_speed_mps, limits_.max_speed_mps);
     clamped[4] = math::wrapToPi(state[4]);
-    clamped[5] = math::wrapToPi(state[5]);
+    clamped[5] = std::clamp(state[5], -std::numbers::pi / 2.0, std::numbers::pi / 2.0);
     return clamped;
 }
 

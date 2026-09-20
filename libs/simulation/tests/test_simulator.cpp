@@ -152,7 +152,7 @@ TEST_F(SimulatorTest, StepKeepsTheStateInsideTheEnvelope)
         ASSERT_TRUE(x.allFinite()) << "diverged at step " << i;
         EXPECT_GE(x[3], limits_.min_speed_mps);
         EXPECT_LE(x[3], limits_.max_speed_mps);
-        EXPECT_LE(std::abs(x[5]), std::numbers::pi) << "gamma stays wrapped into (-pi, pi]";
+        EXPECT_LE(std::abs(x[5]), k_half_pi) << "gamma stays within its definitional range";
     }
 }
 

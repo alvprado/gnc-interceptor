@@ -11,9 +11,9 @@ ConstantVelocity::ConstantVelocity(Eigen::Vector3d const& position_m,
 {
 }
 
-TargetState ConstantVelocity::evaluateTargetStateAt(double time_s) const noexcept
+math::CartesianState ConstantVelocity::evaluateTargetStateAt(double time_s) const noexcept
 {
-    return TargetState{initial_position_m_ + time_s * velocity_mps_, velocity_mps_,
+    return math::CartesianState{initial_position_m_ + time_s * velocity_mps_, velocity_mps_,
                        Eigen::Vector3d::Zero()};
 }
 
@@ -26,7 +26,7 @@ Circle::Circle(Eigen::Vector3d const& center_m, double speed_mps, double load_fa
 {
 }
 
-TargetState Circle::evaluateTargetStateAt(double time_s) const noexcept
+math::CartesianState Circle::evaluateTargetStateAt(double time_s) const noexcept
 {
     double const theta = angular_rate_rps_ * time_s;
     Eigen::Vector3d const radial =
@@ -34,7 +34,7 @@ TargetState Circle::evaluateTargetStateAt(double time_s) const noexcept
     Eigen::Vector3d const tangential =
         radius_m_ * angular_rate_rps_ * (-std::sin(theta) * basis_.u + std::cos(theta) * basis_.w);
 
-    TargetState state;
+    math::CartesianState state;
     state.position_m = center_m_ + radial;
     state.velocity_mps = tangential;
     state.acceleration_mps2 = -angular_rate_rps_ * angular_rate_rps_ * radial;
@@ -52,7 +52,7 @@ FigureEight::FigureEight(Eigen::Vector3d const& center_m, double length_m, doubl
 {
 }
 
-TargetState FigureEight::evaluateTargetStateAt(double time_s) const noexcept
+math::CartesianState FigureEight::evaluateTargetStateAt(double time_s) const noexcept
 {
     double const theta = angular_rate_rps_ * time_s;
     double const sin_t = std::sin(theta), cos_t = std::cos(theta);
@@ -65,7 +65,7 @@ TargetState FigureEight::evaluateTargetStateAt(double time_s) const noexcept
     double const ddx = -half_length_m_ * sin_t;
     double const ddy = -4.0 * half_width_m_ * sin_2t;
 
-    TargetState state;
+    math::CartesianState state;
     state.position_m = center_m_ + x * basis_.u + y * basis_.w;
     state.velocity_mps = angular_rate_rps_ * (dx * basis_.u + dy * basis_.w);
     state.acceleration_mps2 =
@@ -84,7 +84,7 @@ Helix::Helix(Eigen::Vector3d const& center_m, double speed_mps, double load_fact
 {
 }
 
-TargetState Helix::evaluateTargetStateAt(double time_s) const noexcept
+math::CartesianState Helix::evaluateTargetStateAt(double time_s) const noexcept
 {
     double const theta = angular_rate_rps_ * time_s;
     Eigen::Vector3d const radial =
@@ -92,7 +92,7 @@ TargetState Helix::evaluateTargetStateAt(double time_s) const noexcept
     Eigen::Vector3d const tangential =
         radius_m_ * angular_rate_rps_ * (-std::sin(theta) * basis_.u + std::cos(theta) * basis_.w);
 
-    TargetState state;
+    math::CartesianState state;
     state.position_m = center_m_ + radial + climb_rate_mps_ * time_s * basis_.n_hat;
     state.velocity_mps = tangential + climb_rate_mps_ * basis_.n_hat;
     state.acceleration_mps2 = -angular_rate_rps_ * angular_rate_rps_ * radial;

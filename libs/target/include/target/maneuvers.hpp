@@ -20,7 +20,7 @@ public:
     /// @brief Evaluate the target state at the given time.
     /// @param[in] time_s Time since t = 0.
     /// @returns The position, velocity and (zero) acceleration at time_s.
-    [[nodiscard]] TargetState evaluateTargetStateAt(double time_s) const noexcept;
+    [[nodiscard]] math::CartesianState evaluateTargetStateAt(double time_s) const noexcept;
 
 private:
     Eigen::Vector3d initial_position_m_;
@@ -49,7 +49,7 @@ public:
     /// @brief Evaluate the target state at the given time.
     /// @param[in] time_s Time since t = 0.
     /// @returns The position, velocity and centripetal acceleration at time_s.
-    [[nodiscard]] TargetState evaluateTargetStateAt(double time_s) const noexcept;
+    [[nodiscard]] math::CartesianState evaluateTargetStateAt(double time_s) const noexcept;
 
 private:
     Eigen::Vector3d center_m_;
@@ -80,7 +80,7 @@ public:
     /// @brief Evaluate the target state at the given time.
     /// @param[in] time_s Time since t = 0.
     /// @returns The position, velocity and acceleration at time_s.
-    [[nodiscard]] TargetState evaluateTargetStateAt(double time_s) const noexcept;
+    [[nodiscard]] math::CartesianState evaluateTargetStateAt(double time_s) const noexcept;
 
 private:
     Eigen::Vector3d center_m_;
@@ -117,7 +117,7 @@ public:
     /// @brief Evaluate the target state at the given time.
     /// @param[in] time_s Time since t = 0.
     /// @returns The position, velocity and acceleration at time_s.
-    [[nodiscard]] TargetState evaluateTargetStateAt(double time_s) const noexcept;
+    [[nodiscard]] math::CartesianState evaluateTargetStateAt(double time_s) const noexcept;
 
 private:
     Eigen::Vector3d center_m_;

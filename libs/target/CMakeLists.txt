@@ -10,8 +10,8 @@ target_include_directories(gnc_target PUBLIC
 
 target_link_libraries(gnc_target
     PUBLIC Eigen3::Eigen
-    PRIVATE gnc::math
-            gnc_compile_options)
+           gnc::math
+    PRIVATE gnc_compile_options)
 
 target_compile_features(gnc_target PUBLIC cxx_std_20)
 
