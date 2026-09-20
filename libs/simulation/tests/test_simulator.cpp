@@ -110,7 +110,7 @@ TEST_F(SimulatorTest, SteadyLevelFlightMatchesTheClosedForm)
 
 TEST_F(SimulatorTest, IntegratorsAchieveTheirOrderOfAccuracy)
 {
-    auto const x0 = make_state(0.0, 0.0, 0.0, 120.0, 0.3, 0.1);
+    auto const x0 = make_state(0.0, 0.0, 0.0, 90.0, 0.3, 0.1);
     auto const u = make_control(50.0, 3.0, 0.5);
     constexpr double horizon_s{2.0};
 
@@ -134,7 +134,7 @@ TEST_F(SimulatorTest, IntegratorsAchieveTheirOrderOfAccuracy)
 
 TEST_F(SimulatorTest, RK4IsFarMoreAccurateThanEuler)
 {
-    auto const x0 = make_state(0.0, 0.0, 0.0, 120.0, 0.3, 0.1);
+    auto const x0 = make_state(0.0, 0.0, 0.0, 90.0, 0.3, 0.1);
     auto const u = make_control(50.0, 3.0, 0.5);
     auto const reference = propagate(model_, math::RK4Step{}, x0, u, 1.0e-5, 200000);
 
@@ -190,7 +190,7 @@ TEST_F(SimulatorTest, ClampingDoesNotPerturbFlightInsideTheEnvelope)
     wide.max_speed_mps = 1.0e6;
     UAV3DofModel const unrestricted{params_, wide};
 
-    auto const x0 = make_state(0.0, 0.0, 0.0, 120.0, 0.3, 0.1);
+    auto const x0 = make_state(0.0, 0.0, 0.0, 90.0, 0.3, 0.1);
     auto const u = make_control(50.0, 3.0, 0.5);
 
     auto const limited = propagate(model_, math::RK4Step{}, x0, u, 0.01, 100);

@@ -1,37 +1,48 @@
+#include <algorithm>
 #include <cstdio>
 #include <numbers>
 #include <string_view>
 #include <vector>
 
 #include "csv_logger.hpp"
+#include "guidance/pn_controller.hpp"
+#include "math/cartesian_state.hpp"
 #include "math/constants.hpp"
 #include "math/integrators.hpp"
 #include "simulation/simulator.hpp"
 #include "simulation/uav_3dof_model.hpp"
 #include "target/maneuvers.hpp"
-
 namespace
 {
-/// @brief Compute thrust and load factor to remain in a constant speed and flight path angle via
-/// feedforward control
-[[nodiscard]] Eigen::Vector<double, 3> steadyFlightControl(
-    Eigen::Vector<double, 6> const& state, simulation::UAV3DofModelParams const& params) noexcept
+
+[[nodiscard]] bool interceptionOccured(math::CartesianState const& target,
+                                       math::CartesianState const& interceptor)
 {
-    auto const& flight_path_angle = state[5];
-    auto const& velocity = state[3];
+    constexpr double interception_distance{1.0};
+    return (target.position_m - interceptor.position_m).norm() < interception_distance;
+}
 
-    double const thrust =
-        math::gravity_mps2 * std::sin(flight_path_angle) * params.mass_kg +
-        0.5 * params.rho_kgpm3 * params.drag_coeff * params.frontal_area_m2 * velocity * velocity;
-    double const load_factor = std::cos(flight_path_angle);
+/// @brief Interceptor state at the origin, moving at 1 m/s toward the target.
+[[nodiscard]] math::CartesianState initializeInterceptorState(
+    math::CartesianState const& target_state) noexcept
+{
+    constexpr double initial_speed_mps{1.0};
+    constexpr double min_range_m{1.0e-6};
 
-    return Eigen::Vector3d{thrust, load_factor, 0.0};
+    double const range = std::max(target_state.position_m.norm(), min_range_m);
+    Eigen::Vector3d const direction = target_state.position_m / range;
+
+    math::CartesianState interceptor_state;
+    interceptor_state.position_m = Eigen::Vector3d::Zero();
+    interceptor_state.velocity_mps = initial_speed_mps * direction;
+    return interceptor_state;
 }
 
 }  // namespace
 
 int main()
 {
+    using guidance::PNController;
     using simulation::UAV3DofModel;
     using simulation::UAVSimulator;
 
@@ -39,21 +50,27 @@ int main()
     UAV3DofModel const model{simulation::UAV3DofModelParams{}, simulation::UAV3DofModelLimits{}};
     UAVSimulator<UAV3DofModel, math::RK4Step> const sim{model, math::RK4Step{}};
 
-    // Start climbing at 20 deg, away from the |gamma| = 90 deg singularity.
-    UAV3DofModel::StateVec initial_state;
-    initial_state << 0.0, 0.0, 0.0, 1.0, 0.0, 20.0 * std::numbers::pi / 180.0;
-    math::CartesianState state = model.toCartesianState(initial_state);
+    // Guidance controller
+    auto controller_config = guidance::PNControllerConfig{};
+    PNController const controller{controller_config};
 
-    // Initial thrust
-    constexpr double initial_thrust{100.0};
+    // Target: a climbing spiral on a tilted axis (normal is not vertical, so
+    // the circling plane itself is tilted, on top of the per-turn climb) at
+    // a sensible drone cruise speed.
+    target::Helix const target_traj{
+        Eigen::Vector3d{3000.0, 0.0, 1500.0},  // center
+        50.0,                                  // speed_mps
+        1.0,                                   // load_factor (sets ~240 m turn radius)
+        15.0 * std::numbers::pi / 180.0,       // climb_angle_rad
+        Eigen::Vector3d{1.0, 0.0, 1.0},        // normal: 45 deg tilted spiral axis
+        Eigen::Vector3d{1.0, 0.0, 0.0}};       // reference_direction
 
-    // Target: a horizontal figure-eight ahead of the interceptor.
-    target::FigureEight const target_traj{
-        Eigen::Vector3d{3000.0, 0.0, 1500.0}, 1000.0, 500.0, 0.15, Eigen::Vector3d{1.0, 0.0, 1.0},
-        Eigen::Vector3d{1.0, 0.0, 0.0}};
+    // Interceptor: at the origin, launched pointing at the target's initial
+    // position.
+    math::CartesianState state = initializeInterceptorState(target_traj.evaluateTargetStateAt(0.0));
 
-    constexpr double dt{0.1};
-    constexpr double duration_s{50.0};
+    constexpr double dt{0.01};
+    constexpr double duration_s{100.0};
     constexpr int steps{static_cast<int>(duration_s / dt)};
 
     std::vector<TrajectorySample> samples;
@@ -68,9 +85,10 @@ int main()
         UAV3DofModel::StateVec const model_state = model.fromCartesianState(state);
 
         auto const target_state = target_traj.evaluateTargetStateAt(t);
-        samples.push_back(TrajectorySample{t, model_state, target_state});
+        Eigen::Vector3d const control = controller.step(target_state, state, dt);
+        samples.push_back(TrajectorySample{t, model_state, target_state, control});
 
-        if (i % 10 == 0)
+        if (i % 100 == 0)
         {
             std::printf("%6.1f  %10.2f %10.2f %10.2f  %8.2f  %10.2f\n", t, model_state[0],
                         model_state[1], model_state[2], model_state[3],
@@ -82,11 +100,14 @@ int main()
             break;
         }
 
-        auto const& control =
-            (t < 5.0) ? UAV3DofModel::ControlVec{initial_thrust, 1.0, 0.0}
-                      : steadyFlightControl(model_state, simulation::UAV3DofModelParams{});
         state = sim.step(state, control, dt);
         t += dt;
+
+        if (interceptionOccured(target_state, state))
+        {
+            std::printf("\ninterception occurred!\n");
+            break;
+        }
     }
 
     constexpr std::string_view csv_path{"standalone/outputs/standalone_trajectory.csv"};

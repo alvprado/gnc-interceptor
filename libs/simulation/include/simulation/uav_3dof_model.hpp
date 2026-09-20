@@ -12,7 +12,7 @@ namespace simulation
 /// @brief Physical parameters of the 3-DOF point-mass UAV model.
 struct UAV3DofModelParams
 {
-    double mass_kg{5.0};                        ///< Vehicle mass in kg.
+    double mass_kg{2.5};                        ///< Vehicle mass in kg.
     double rho_kgpm3{math::air_density_kgpm3};  ///< Air density in kg/m^3.
     double frontal_area_m2{0.1};                ///< Reference frontal area in m^2.
     double drag_coeff{0.08};                    ///< Dimensionless drag coefficient.
@@ -27,7 +27,7 @@ struct UAV3DofModelLimits
     double max_load_factor{9.0};                  ///< Maximum load factor.
     double max_bank_angle_rad{std::numbers::pi};  ///< Maximum |bank angle| in rad.
     double min_speed_mps{1.0};                    ///< Minimum speed in m/s.
-    double max_speed_mps{300.0};                  ///< Maximum speed in m/s.
+    double max_speed_mps{112.5};                  ///< Maximum speed in m/s.
 };
 
 /// @brief 3-DOF point-mass UAV model supplying the continuous dynamics

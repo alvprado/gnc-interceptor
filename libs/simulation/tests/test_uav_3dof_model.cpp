@@ -216,7 +216,7 @@ TEST_F(UAV3DofModelTest, ClampControlLimitsEachChannel)
 
 TEST_F(UAV3DofModelTest, ClampStateLeavesFeasibleStatesUntouched)
 {
-    auto const x = make_state(100.0, 200.0, 300.0, 120.0, 2.0, 0.4);
+    auto const x = make_state(100.0, 200.0, 300.0, 90.0, 2.0, 0.4);
     EXPECT_TRUE(model_.clampState(x).isApprox(x));
 }
 
