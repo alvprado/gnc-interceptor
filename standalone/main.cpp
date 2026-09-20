@@ -40,8 +40,9 @@ int main()
     UAVSimulator<UAV3DofModel, math::RK4Step> const sim{model, math::RK4Step{}};
 
     // Start climbing at 20 deg, away from the |gamma| = 90 deg singularity.
-    UAV3DofModel::StateVec state;
-    state << 0.0, 0.0, 0.0, 1.0, 0.0, 20.0 * std::numbers::pi / 180.0;
+    UAV3DofModel::StateVec initial_state;
+    initial_state << 0.0, 0.0, 0.0, 1.0, 0.0, 20.0 * std::numbers::pi / 180.0;
+    math::CartesianState state = model.toCartesianState(initial_state);
 
     // Initial thrust
     constexpr double initial_thrust{100.0};
@@ -64,13 +65,16 @@ int main()
     double t = 0.0;
     for (int i = 0; i <= steps; ++i)
     {
+        UAV3DofModel::StateVec const model_state = model.fromCartesianState(state);
+
         auto const target_state = target_traj.evaluateTargetStateAt(t);
-        samples.push_back(TrajectorySample{t, state, target_state});
+        samples.push_back(TrajectorySample{t, model_state, target_state});
 
         if (i % 10 == 0)
         {
-            std::printf("%6.1f  %10.2f %10.2f %10.2f  %8.2f  %10.2f\n", t, state[0], state[1],
-                        state[2], state[3], state[5] * 180.0 / std::numbers::pi);
+            std::printf("%6.1f  %10.2f %10.2f %10.2f  %8.2f  %10.2f\n", t, model_state[0],
+                        model_state[1], model_state[2], model_state[3],
+                        model_state[5] * 180.0 / std::numbers::pi);
         }
 
         if (i == steps)
@@ -78,9 +82,9 @@ int main()
             break;
         }
 
-        auto const& control = (t < 5.0)
-                                  ? UAV3DofModel::ControlVec{initial_thrust, 1.0, 0.0}
-                                  : steadyFlightControl(state, simulation::UAV3DofModelParams{});
+        auto const& control =
+            (t < 5.0) ? UAV3DofModel::ControlVec{initial_thrust, 1.0, 0.0}
+                      : steadyFlightControl(model_state, simulation::UAV3DofModelParams{});
         state = sim.step(state, control, dt);
         t += dt;
     }

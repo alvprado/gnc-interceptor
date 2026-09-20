@@ -2,24 +2,32 @@
 
 #include <concepts>
 
+#include "math/cartesian_state.hpp"
 #include "math/concepts.hpp"
 
 namespace simulation
 {
 
-/// @brief A model the simulator can advance: supplies the dynamics and the
-/// limits of its own state and control.
+/// @brief A model the simulator can advance: supplies the dynamics, the
+/// limits of its own state and control, and a bidirectional mapping between
+/// its own state and a model-agnostic Cartesian state.
 /// @tparam Model_T The model type to check.
 template <typename Model_T>
 concept SimulatableModel =
     math::StateTransition<Model_T, typename Model_T::StateVec, typename Model_T::ControlVec> &&
     requires(Model_T const& m, typename Model_T::StateVec const& x,
-             typename Model_T::ControlVec const& u) {
+             typename Model_T::ControlVec const& u, math::CartesianState const& k) {
         {
             m.clampControl(u)
         } -> std::convertible_to<typename Model_T::ControlVec>;
         {
             m.clampState(x)
+        } -> std::convertible_to<typename Model_T::StateVec>;
+        {
+            m.toCartesianState(x)
+        } -> std::convertible_to<math::CartesianState>;
+        {
+            m.fromCartesianState(k)
         } -> std::convertible_to<typename Model_T::StateVec>;
     };
 
@@ -44,12 +52,12 @@ public:
     UAVSimulator(Model_T const& model, Integrator_T const& integrator);
 
     /// @brief Advance the state by one timestep.
-    /// @param[in] state The state at the start of the step.
+    /// @param[in] state The Cartesian state at the start of the step.
     /// @param[in] control The control held constant over the step.
     /// @param[in] dt The timestep.
-    /// @returns The state advanced by one timestep.
-    [[nodiscard]] StateVec step(StateVec const& state, ControlVec const& control,
-                                Scalar dt) const noexcept;
+    /// @returns The Cartesian state after the step.
+    [[nodiscard]] math::CartesianState step(math::CartesianState const& state,
+                                            ControlVec const& control, Scalar dt) const noexcept;
 
 private:
     Model_T model_;

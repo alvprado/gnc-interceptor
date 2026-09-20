@@ -11,12 +11,15 @@ UAVSimulator<Model_T, Integrator_T>::UAVSimulator(Model_T const &model,
 }
 
 template <SimulatableModel Model_T, typename Integrator_T>
-typename UAVSimulator<Model_T, Integrator_T>::StateVec UAVSimulator<Model_T, Integrator_T>::step(
-    StateVec const &state, ControlVec const &control, Scalar dt) const noexcept
+math::CartesianState UAVSimulator<Model_T, Integrator_T>::step(math::CartesianState const &state,
+                                                               ControlVec const &control,
+                                                               Scalar dt) const noexcept
 {
+    StateVec const internal_state = model_.fromCartesianState(state);
     ControlVec const clamped_control = model_.clampControl(control);
-    StateVec const next_state = integrator_(model_, state, clamped_control, dt);
-    return model_.clampState(next_state);
+    StateVec const next_internal_state = integrator_(model_, internal_state, clamped_control, dt);
+    StateVec const clamped_internal_state = model_.clampState(next_internal_state);
+    return model_.toCartesianState(clamped_internal_state);
 }
 
 }  // namespace simulation

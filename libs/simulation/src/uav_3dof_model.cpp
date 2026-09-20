@@ -61,6 +61,36 @@ UAV3DofModel::StateVec UAV3DofModel::operator()(StateVec const& state,
     return StateVec{x_dot, y_dot, z_dot, v_dot, psi_dot, gamma_dot};
 }
 
+math::CartesianState UAV3DofModel::toCartesianState(StateVec const& state) const noexcept
+{
+    auto const v = state[3];
+    auto const psi = state[4];
+    auto const gamma = state[5];
+    auto const cos_gamma = std::cos(gamma);
+
+    math::CartesianState cartesian;
+    cartesian.position_m = state.head<3>();
+    cartesian.velocity_mps = Eigen::Vector3d{v * cos_gamma * std::cos(psi),
+                                              v * cos_gamma * std::sin(psi), v * std::sin(gamma)};
+    return cartesian;
+}
+
+UAV3DofModel::StateVec UAV3DofModel::fromCartesianState(
+    math::CartesianState const& cartesian) const noexcept
+{
+    auto const& velocity = cartesian.velocity_mps;
+    auto const v = velocity.norm();
+    auto const psi = std::atan2(velocity.y(), velocity.x());
+    auto const gamma = (v > 0.0) ? std::asin(std::clamp(velocity.z() / v, -1.0, 1.0)) : 0.0;
+
+    StateVec state;
+    state.head<3>() = cartesian.position_m;
+    state[3] = v;
+    state[4] = psi;
+    state[5] = gamma;
+    return state;
+}
+
 UAV3DofModel::ControlVec UAV3DofModel::clampControl(ControlVec const& control) const noexcept
 {
     return ControlVec{

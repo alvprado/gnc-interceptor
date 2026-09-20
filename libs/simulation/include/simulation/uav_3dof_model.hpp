@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <numbers>
 
+#include "math/cartesian_state.hpp"
 #include "math/constants.hpp"
 
 namespace simulation
@@ -52,6 +53,18 @@ public:
     /// @returns The state derivative ẋ.
     [[nodiscard]] StateVec operator()(StateVec const& state,
                                       ControlVec const& control) const noexcept;
+
+    /// @brief Map a state to its Cartesian view.
+    /// @param[in] state The state to convert.
+    /// @returns The position and velocity in the inertial frame.
+    [[nodiscard]] math::CartesianState toCartesianState(StateVec const& state) const noexcept;
+
+    /// @brief Map a Cartesian state back to the model's native state.
+    /// @details Exact inverse of toCartesianState(): gamma's range makes
+    /// (psi, gamma) a bijection with the velocity direction.
+    /// @param[in] cartesian The position and velocity to convert.
+    /// @returns The equivalent native state.
+    [[nodiscard]] StateVec fromCartesianState(math::CartesianState const& cartesian) const noexcept;
 
     /// @brief Clamp a control to the actuator envelope.
     /// @param[in] control The commanded control.
