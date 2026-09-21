@@ -1,5 +1,5 @@
-# guidance: interceptor control laws (PN now, iLQR later) behind a common
-# controller interface.
+# guidance: PN guidance controller behind a common controller interface.
+# Predictive (iLQR) guidance is a sibling library, libs/predictive_guidance - it needs ilqr-cpp
 
 add_library(gnc_guidance
     src/pn_control_law.cpp

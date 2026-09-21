@@ -18,6 +18,15 @@ option(GNC_BUILD_TESTS "Build the unit tests" ON)
 
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 
+include(FetchContent)
+
+# ilqr-cpp: header-only iLQR solver used by libs/predictive_guidance.
+FetchContent_Declare(ilqr
+    GIT_REPOSITORY https://github.com/alvprado/ilqr-cpp.git
+    GIT_TAG d2a73054dbfaec8a536ed5a05239e225970c0bb1
+    GIT_SHALLOW FALSE)
+FetchContent_MakeAvailable(ilqr)
+
 # Warning flags shared by every target we compile ourselves. Linked PRIVATE by
 # each library so the flags never propagate to consumers.
 add_library(gnc_compile_options INTERFACE)
@@ -27,7 +36,6 @@ target_compile_options(gnc_compile_options INTERFACE
 if(GNC_BUILD_TESTS)
     enable_testing()
 
-    include(FetchContent)
     FetchContent_Declare(googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.15.2
@@ -42,4 +50,5 @@ add_subdirectory(libs/math)
 add_subdirectory(libs/simulation)
 add_subdirectory(libs/target)
 add_subdirectory(libs/guidance)
+add_subdirectory(libs/predictive_guidance)
 add_subdirectory(standalone)

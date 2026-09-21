@@ -61,7 +61,7 @@ public:
 
 private:
     Model_T model_;
-    Integrator_T integrator_;
+    [[no_unique_address]] Integrator_T integrator_;
 };
 
 }  // namespace simulation
