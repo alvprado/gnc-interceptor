@@ -17,6 +17,7 @@ endif()
 option(GNC_BUILD_TESTS "Build the unit tests" ON)
 
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+find_package(autodiff QUIET)
 
 include(FetchContent)
 
