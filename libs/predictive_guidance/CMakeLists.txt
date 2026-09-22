@@ -2,6 +2,7 @@
 # ilqr-cpp.
 
 add_library(gnc_predictive_guidance
+    src/cost.cpp
     src/predictive_guidance_controller.cpp)
 add_library(gnc::predictive_guidance ALIAS gnc_predictive_guidance)
 

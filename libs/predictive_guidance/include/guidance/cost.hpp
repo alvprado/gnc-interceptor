@@ -19,7 +19,16 @@ public:
     using ControlMat = typename Dims::ControlMat;
 
     /// @brief Ctor
-    SoftminCost(SoftminConfig const& config, Eigen::Vector3d const& last_target_position) noexcept;
+    /// @param[in] config The softmin tuning (d_scale, min_q, beta).
+    /// @param[in] last_target_position The target position to soft-min the distance to.
+    /// @param[in] softmin_weight Weight of this cost
+    SoftminCost(SoftminConfig const& config, Eigen::Vector3d const& last_target_position,
+                double softmin_weight) noexcept
+        : config_(config),
+          last_target_position_(last_target_position),
+          softmin_weight_(softmin_weight)
+    {
+    }
 
     /// @brief Zero running costs.
     [[nodiscard]] Scalar evaluate(const StateVec&, const ControlVec&, int) const
@@ -30,10 +39,11 @@ public:
     /// @brief Softmin cost J_softmin
     [[nodiscard]] Scalar evaluate_final(const StateVec& x) const
     {
-        return config_.min_q -
-               (1 / config_.beta) *
-                   std::log(x[6] + std::exp(-config_.beta *
-                                            (scaledSquaredDistanceToTarget(x) - config_.min_q)));
+        return softmin_weight_ *
+               (config_.min_q -
+                (1 / config_.beta) *
+                    std::log(x[6] + std::exp(-config_.beta *
+                                             (scaledSquaredDistanceToTarget(x) - config_.min_q))));
     }
 
     /// @brief Running-cost quadratic expansion (the final-cost expansion scaled by running_weight).
@@ -76,6 +86,10 @@ public:
         result.lf_xx(Eigen::seqN(0, 6), Eigen::seqN(6, 1)) = -(weight / D) * q_x;
         result.lf_xx(6, 6) = 1.0 / (config_.beta * D * D);
 
+        result.lf *= softmin_weight_;
+        result.lf_x *= softmin_weight_;
+        result.lf_xx *= softmin_weight_;
+
         return result;
     }
 
@@ -90,5 +104,6 @@ private:
 
     SoftminConfig config_;
     Eigen::Vector3d last_target_position_;
+    double softmin_weight_;
 };
 }  // namespace guidance

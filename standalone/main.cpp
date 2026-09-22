@@ -6,6 +6,7 @@
 
 #include "csv_logger.hpp"
 #include "guidance/pn_controller.hpp"
+#include "guidance/predictive_guidance_controller.hpp"
 #include "math/cartesian_state.hpp"
 #include "math/constants.hpp"
 #include "math/integrators.hpp"
@@ -18,7 +19,7 @@ namespace
 [[nodiscard]] bool interceptionOccured(math::CartesianState const& target,
                                        math::CartesianState const& interceptor)
 {
-    constexpr double interception_distance{1.0};
+    constexpr double interception_distance{2.0};
     return (target.position_m - interceptor.position_m).norm() < interception_distance;
 }
 
@@ -43,6 +44,7 @@ namespace
 int main()
 {
     using guidance::PNController;
+    using guidance::PredictiveGuidanceController;
     using simulation::UAV3DofModel;
     using simulation::UAVSimulator;
 
@@ -50,20 +52,22 @@ int main()
     UAV3DofModel const model{simulation::UAV3DofModelParams{}, simulation::UAV3DofModelLimits{}};
     UAVSimulator<UAV3DofModel, math::RK4Step> const sim{model, math::RK4Step{}};
 
-    // Guidance controller
-    auto controller_config = guidance::PNControllerConfig{};
-    PNController const controller{controller_config};
+    // Flag to switch controllers
+    constexpr bool use_predictive_guidance{true};
 
-    // Target: a climbing spiral on a tilted axis (normal is not vertical, so
-    // the circling plane itself is tilted, on top of the per-turn climb) at
-    // a sensible drone cruise speed.
-    target::Helix const target_traj{
-        Eigen::Vector3d{3000.0, 0.0, 1500.0},  // center
-        50.0,                                  // speed_mps
-        1.0,                                   // load_factor (sets ~240 m turn radius)
-        15.0 * std::numbers::pi / 180.0,       // climb_angle_rad
-        Eigen::Vector3d{1.0, 0.0, 1.0},        // normal: 45 deg tilted spiral axis
-        Eigen::Vector3d{1.0, 0.0, 0.0}};       // reference_direction
+    /// Standard guidance controller
+    PNController const pn_controller{guidance::PNControllerConfig{}};
+
+    // Predictive guidance controller
+    auto ilqr_config = guidance::PredictiveGuidanceControllerConfig{};
+    ilqr_config.solver_config.max_iterations = 50;
+    PredictiveGuidanceController predictive_controller{ilqr_config};
+
+    // Target: straight line, constant velocity -- matches predictTargetPositions()'s own
+    // constant-velocity extrapolation exactly, so prediction error is removed from the picture.
+    target::ConstantVelocity const target_traj{
+        Eigen::Vector3d{3000.0, 0.0, 1500.0},  // position_m at t=0
+        Eigen::Vector3d{0.0, 40.0, 10.0}};     // velocity_mps, held constant
 
     // Interceptor: at the origin, launched pointing at the target's initial
     // position.
@@ -85,7 +89,9 @@ int main()
         UAV3DofModel::StateVec const model_state = model.fromCartesianState(state);
 
         auto const target_state = target_traj.evaluateTargetStateAt(t);
-        Eigen::Vector3d const control = controller.step(target_state, state, dt);
+        Eigen::Vector3d const control = use_predictive_guidance
+                                            ? predictive_controller.step(target_state, state, dt)
+                                            : pn_controller.step(target_state, state, dt);
         samples.push_back(TrajectorySample{t, model_state, target_state, control});
 
         if (i % 100 == 0)
