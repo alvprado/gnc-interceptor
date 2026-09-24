@@ -19,7 +19,7 @@ namespace
 [[nodiscard]] bool interceptionOccured(math::CartesianState const& target,
                                        math::CartesianState const& interceptor)
 {
-    constexpr double interception_distance{2.0};
+    constexpr double interception_distance{1.0};
     return (target.position_m - interceptor.position_m).norm() < interception_distance;
 }
 
@@ -63,11 +63,14 @@ int main()
     ilqr_config.solver_config.max_iterations = 50;
     PredictiveGuidanceController predictive_controller{ilqr_config};
 
-    // Target: straight line, constant velocity -- matches predictTargetPositions()'s own
-    // constant-velocity extrapolation exactly, so prediction error is removed from the picture.
-    target::ConstantVelocity const target_traj{
-        Eigen::Vector3d{3000.0, 0.0, 1500.0},  // position_m at t=0
-        Eigen::Vector3d{0.0, 40.0, 10.0}};     // velocity_mps, held constant
+    // Target: figure-eight
+    target::FigureEight const target_traj{
+        Eigen::Vector3d{3000.0, 500.0, 1500.0},  // center_m
+        1000.0,                                  // length_m (tip to tip along the long axis)
+        500.0,                                   // width_m (tip to tip across)
+        0.1,                                     // angular_rate_rps
+        Eigen::Vector3d{1.0, 0.0, 1.0},          // normal (flat, horizontal figure eight)
+        Eigen::Vector3d{0.0, -500.0, 0.0}};      // reference_direction (fixes the long axis)
 
     // Interceptor: at the origin, launched pointing at the target's initial
     // position.

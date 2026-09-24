@@ -5,70 +5,50 @@
 #include <cstddef>
 #include <ilqr/dynamics/autodiff_policy.hpp>
 #include <ilqr/ilqr.hpp>
-#include <iostream>
-#include <limits>
-#include <numbers>
-#include <span>
 #include <utility>
 
-#include "guidance/cost.hpp"
+#include "guidance/control_rate_cost_term.hpp"
 #include "guidance/dynamics_model.hpp"
-#include "ilqr/core/solver_io.hpp"
+
 namespace guidance
 {
 namespace
 {
 
-/// @brief Floor on interceptor speed (m/s) applied before normalizing.
-inline constexpr double min_speed_mps{1.0e-6};
-
-/// @brief Floor on d_scale (m), applied so it can't collapse to zero as the interceptor closes
-/// in on the target.
-inline constexpr double min_d_scale_m{1.0};
-
-using Model = AugmentedDiscreteUAV3DofModel<ilqr::math::HeunStep, ilqr::AutoDiff>;
-using Cost = ilqr::CompositeCostFunction<SoftminCost, ilqr::ControlPenaltyCost<Dims>,
-                                         ilqr::QuadraticStateRegulatorCost<Dims>>;
-using Solver = ilqr::ILQRSolver<Model, Cost>;
+inline constexpr double min_speed_mps{1.0e-6};  ///< avoids div-by-zero when normalizing velocity
+inline constexpr double min_d_scale_m{1.0};     ///< avoids div-by-zero as range collapses to 0
 
 }  // namespace
 
 PredictiveGuidanceController::PredictiveGuidanceController(
     PredictiveGuidanceControllerConfig config)
-    : config_(std::move(config)), target_predictions_(static_cast<std::size_t>(config_.horizon))
+    : config_(std::move(config)),
+      thrust_control_law_(config_.thrust_control),
+      target_predictions_(static_cast<std::size_t>(config_.horizon))
 {
 }
 
 Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& target,
                                                    math::CartesianState const& interceptor, double)
 {
-    /// Compute internal model state out of cartesian state
-    Dims::StateVec const x0 = toAugmentedState(interceptor);
-    auto const& speed = x0[3];
-    auto const& flight_path_angle_rad = x0[5];
+    double const speed = interceptor.velocity_mps.norm();
 
-    /// Boost phase: fixed climb until speed first reaches switch_speed_mps, then latched off
-    /// permanently -- once out, we never revisit this branch, even if speed later dips again.
     if (!has_exited_boost_)
     {
-        if (speed < config_.switch_speed_mps)
+        if (speed < thrust_control_law_.switchSpeedMps())
         {
-            return Eigen::Vector3d{config_.max_thrust_n, 1.0, 0.0};
+            return Eigen::Vector3d{thrust_control_law_.step(interceptor), 1.0, 0.0};
         }
         has_exited_boost_ = true;
     }
 
-    /// Check if an interception exists from the buffer - If interception exists, shrink horizon to
-    /// save compute and improve numerics
-    double const interception_radius = speed * config_.dt;
-    auto const interception_index = interceptionPredictedAt(interception_radius);
-    int dynamic_horizon = config_.horizon;
-    if (interception_index.has_value())
-    {
-        dynamic_horizon = std::min(interception_index.value() + 1, config_.horizon);
-    }
+    Dims::ControlVec const previous_control = previous_control_trajectory_.empty()
+                                                  ? Dims::ControlVec{1.0, 0.0}
+                                                  : previous_control_trajectory_[0];
+    Dims::StateVec const x0 = toModelState(interceptor, previous_control);
 
-    /// Resize buffer if horizon length changed
+    int const dynamic_horizon = computeHorizonLenght(target, interceptor);
+
     if (size_t new_buffer_length = static_cast<size_t>(dynamic_horizon);
         new_buffer_length != target_predictions_.size())
     {
@@ -77,49 +57,43 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
         previous_state_trajectory_.resize(new_buffer_length + 1);
     }
 
-    /// Predict target positions
     predictTargetPositions(target);
 
-    /// Scale d_scale to the current engagement distance so q_k stays well-conditioned regardless
-    /// of how far away the target is (a fixed d_scale blows up for distant targets and collapses
-    /// to zero right at intercept).
+    AugmentedDiscreteUAV3DofModel<ilqr::math::HeunStep, ilqr::AutoDiff> model(
+        UAV3DofModel{config_.thrust_control.vehicle, speed}, config_.dt, ilqr::math::HeunStep{},
+        ilqr::AutoDiff{});
+
     double const d_scale = std::max((x0.head<3>() - target_predictions_[0]).norm(), min_d_scale_m);
-
-    /// Compute softmin config - min_q is the minimal scaled squared distance between the current
-    /// interceptor trajectory and the predicted target trajectory
-    SoftminConfig const softmin_config{d_scale, computeMinQ(x0, d_scale),
-                                       config_.softmin_config.beta};
-
-    /// Create an UAV 3DoF model with an augmented state for softmin computation
-    Model model(UAV3DofModel{config_.vehicle},
-                std::span<Eigen::Vector3d const>(target_predictions_), config_.dt, softmin_config,
-                ilqr::math::HeunStep{}, ilqr::AutoDiff{});
-
-    /// Construct the cost function - (soft)min interception distance + control effort + cruise
-    /// speed tracking
-    SoftminCost softmin_cost(softmin_config, target_predictions_.back(), config_.softmin_weight);
-    ilqr::ControlPenaltyCost<Dims> control_cost(
+    Dims::StateMat R_interception = Dims::StateMat::Zero();
+    R_interception.diagonal().head<3>().setConstant(config_.final_interception_weight /
+                                                    (d_scale * d_scale));
+    Dims::StateVec x_goal = Dims::StateVec::Zero();
+    x_goal.head<3>() = target_predictions_.back();
+    ilqr::FinalCost<Dims> interception_cost(R_interception, x_goal);
+    ControlRateCost<Dims> control_rate_cost(
         Dims::ControlMat(config_.control_effort_weight.asDiagonal()));
-    Dims::StateMat cruise_speed_Q = Dims::StateMat::Zero();
-    cruise_speed_Q(3, 3) = config_.cruise_speed_weight;
-    Dims::StateVec cruise_speed_ref = Dims::StateVec::Zero();
-    cruise_speed_ref[3] = config_.switch_speed_mps;
-    ilqr::QuadraticStateRegulatorCost<Dims> cruise_speed_cost(cruise_speed_Q, cruise_speed_ref);
-    Cost cost(std::move(softmin_cost), std::move(control_cost), std::move(cruise_speed_cost));
 
-    /// Construct solver
-    Solver solver(std::move(model), std::move(cost), config_.solver_config);
+    Dims::StateMat R_tracking = Dims::StateMat::Zero();
+    R_tracking.diagonal().head<3>().setConstant(config_.running_interception_weight /
+                                                (d_scale * d_scale));
+    ilqr::AlignedVec<Dims::StateVec> tracking_ref(target_predictions_.size());
+    for (std::size_t k{0}; k < target_predictions_.size(); ++k)
+    {
+        tracking_ref[k] = Dims::StateVec::Zero();
+        tracking_ref[k].head<3>() = target_predictions_[k];
+    }
+    ilqr::QuadraticTrackingCost<Dims> tracking_cost(R_tracking, std::move(tracking_ref));
 
-    /// Construct limits. Boost is handled entirely by the early return above, so once we reach
-    /// here we are always past it -- thrust is always bounded by the trim value, never max.
-    Dims::ControlVec const lower{0.0, config_.transverse_limits.min_load_factor,
+    ilqr::CompositeCostFunction cost(std::move(interception_cost), std::move(control_rate_cost),
+                                     std::move(tracking_cost));
+
+    ilqr::ILQRSolver solver{std::move(model), std::move(cost), config_.solver_config};
+
+    Dims::ControlVec const lower{config_.transverse_limits.min_load_factor,
                                  -config_.transverse_limits.max_bank_angle_rad};
-    Dims::ControlVec const upper{trimThrust(speed, flight_path_angle_rad),
-                                 config_.transverse_limits.max_load_factor,
+    Dims::ControlVec const upper{config_.transverse_limits.max_load_factor,
                                  config_.transverse_limits.max_bank_angle_rad};
 
-    /// Cold-start if this is the first solve ever (nothing to warm-start from yet), otherwise
-    /// warm-start from the previous solve's trajectory.
     auto const request =
         previous_control_trajectory_.empty()
             ? ilqr::SolveRequest<Dims>::cold_start(x0, dynamic_horizon)
@@ -127,80 +101,46 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
             : ilqr::SolveRequest<Dims>::warm_start(x0, previous_control_trajectory_)
                   .with_control_bounds(lower, upper);
 
-    /// Solve
     auto const result = solver.solve(request);
 
-    /// On failure (InvalidProblem/BoxQPFailed/MaxRegularization) the trajectory is empty; keep
-    /// the existing warm start and fallback either to the previous or the boost control
     if (result.status != ilqr::SolverStatus::Converged &&
         result.status != ilqr::SolverStatus::MaxIterations)
     {
-        if (previous_control_trajectory_.empty())
-        {
-            return Eigen::Vector3d{trimThrust(speed, flight_path_angle_rad), 1.0, 0.0};
-        }
-        return previous_control_trajectory_[0];
+        return Eigen::Vector3d{thrust_control_law_.trimThrust(interceptor), previous_control[0],
+                               previous_control[1]};
     }
 
-    /// Update control and states
     previous_control_trajectory_.assign(result.trajectory.controls().begin(),
                                         result.trajectory.controls().end());
     previous_state_trajectory_.assign(result.trajectory.states().begin(),
                                       result.trajectory.states().end());
 
-    /// Return first control input
-    return result.trajectory.control(0);
+    Dims::ControlVec const u0 = result.trajectory.control(0);
+    return Eigen::Vector3d{thrust_control_law_.trimThrust(interceptor), u0[0], u0[1]};
 }
 
-double PredictiveGuidanceController::trimThrust(double speed_mps,
-                                                double flight_path_angle_rad) const noexcept
+int PredictiveGuidanceController::computeHorizonLenght(
+    math::CartesianState const& target, math::CartesianState const& interceptor) noexcept
 {
-    double const drag_force = 0.5 * config_.vehicle.rho_kgpm3 * config_.vehicle.frontal_area_m2 *
-                              config_.vehicle.drag_coeff * speed_mps * speed_mps;
-    return drag_force +
-           math::gravity_mps2 * std::sin(flight_path_angle_rad) * config_.vehicle.mass_kg;
-}
-
-double PredictiveGuidanceController::computeMinQ(Dims::StateVec const& x0,
-                                                 double d_scale) const noexcept
-{
-    double const d_scale_sq = d_scale * d_scale;
-
-    if (previous_state_trajectory_.empty())
+    const double a = target.velocity_mps.squaredNorm() - interceptor.velocity_mps.squaredNorm();
+    if (a >= 0.0)
     {
-        return (x0.head<3>() - target_predictions_[0]).squaredNorm() / d_scale_sq;
+        return config_.horizon;
     }
 
-    double min_q = std::numeric_limits<double>::max();
-    for (std::size_t k{0}; k < target_predictions_.size(); ++k)
-    {
-        double const q_k =
-            (previous_state_trajectory_[k].head<3>() - target_predictions_[k]).squaredNorm() /
-            d_scale_sq;
-        min_q = std::min(min_q, q_k);
-    }
-    return min_q;
-}
+    Eigen::Vector3d const relative_position = target.position_m - interceptor.position_m;
 
-std::optional<int> PredictiveGuidanceController::interceptionPredictedAt(
-    double interception_radius) noexcept
-{
-    if (target_predictions_.empty() || previous_state_trajectory_.empty())
+    const double b = 2 * relative_position.dot(target.velocity_mps);
+    const double c = relative_position.squaredNorm();
+    const double time_to_collision = (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
+
+    if (time_to_collision < 0.0)
     {
-        return std::nullopt;
+        return config_.horizon;
     }
 
-    double const interception_radius_sq = interception_radius * interception_radius;
-    for (std::size_t k{0}; k < target_predictions_.size(); ++k)
-    {
-        double const dist_sq =
-            (previous_state_trajectory_[k].head<3>() - target_predictions_[k]).squaredNorm();
-        if (dist_sq <= interception_radius_sq)
-        {
-            return static_cast<int>(k);
-        }
-    }
-    return std::nullopt;
+    return std::clamp(static_cast<int>(std::ceil(time_to_collision / config_.dt)) + 1,
+                      config_.min_horizon, config_.horizon);
 }
 
 void PredictiveGuidanceController::predictTargetPositions(
@@ -208,13 +148,14 @@ void PredictiveGuidanceController::predictTargetPositions(
 {
     for (std::size_t i{0}; i < target_predictions_.size(); ++i)
     {
-        target_predictions_[i] =
-            target.position_m + static_cast<double>(i) * config_.dt * target.velocity_mps;
+        double const time = i * config_.dt;
+        target_predictions_[i] = target.position_m + time * target.velocity_mps +
+                                 0.5 * time * time * target.acceleration_mps2;
     }
 }
 
-Dims::StateVec PredictiveGuidanceController::toAugmentedState(
-    math::CartesianState const& interceptor) noexcept
+Dims::StateVec PredictiveGuidanceController::toModelState(
+    math::CartesianState const& interceptor, Dims::ControlVec const& previous_control) noexcept
 {
     double const speed = interceptor.velocity_mps.norm();
     double const speed_safe = std::max(speed, min_speed_mps);
@@ -224,10 +165,9 @@ Dims::StateVec PredictiveGuidanceController::toAugmentedState(
 
     Dims::StateVec x;
     x.head<3>() = interceptor.position_m;
-    x[3] = speed;
-    x[4] = psi;
-    x[5] = gamma;
-    x[6] = 0.0;
+    x[3] = psi;
+    x[4] = gamma;
+    x.tail<2>() = previous_control;
     return x;
 }
 

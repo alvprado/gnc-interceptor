@@ -9,9 +9,9 @@ namespace guidance
 /// @brief Configuration for ThrustControlLaw.
 struct ThrustControlConfig
 {
-    double switch_speed_mps{90.0};   ///< Speed for switching from boost to trim.
-    double max_thrust_n{150.0};      ///< Thrust commanded during boost, in N.
-    ModelParameters vehicle{};       ///< Vehicle model used by the trim law.
+    double switch_speed_mps{90.0};  ///< Speed for switching from boost to trim.
+    double max_thrust_n{150.0};     ///< Thrust commanded during boost, in N.
+    ModelParameters vehicle{};      ///< Vehicle model used by the trim law.
 };
 
 /// @brief Boost-then-trim thrust law: max thrust below switch_speed_mps,
@@ -28,6 +28,12 @@ public:
     /// @param[in] interceptor The interceptor's Cartesian state.
     /// @returns The commanded thrust, in N.
     [[nodiscard]] double step(math::CartesianState const& interceptor) const noexcept;
+
+    /// @brief Feedforward thrust that exactly cancels drag and the gravity component along the
+    /// flight path (v_dot = 0)
+    /// @param[in] interceptor The interceptor's Cartesian state.
+    /// @returns The trim thrust, in N.
+    [[nodiscard]] double trimThrust(math::CartesianState const& interceptor) const noexcept;
 
     /// @brief The speed at which this law switches from boost to trim.
     /// @returns The switch speed, in m/s.

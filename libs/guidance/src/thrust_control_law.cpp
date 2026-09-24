@@ -14,13 +14,17 @@ ThrustControlLaw::ThrustControlLaw(ThrustControlConfig const& config) noexcept :
 
 double ThrustControlLaw::step(math::CartesianState const& interceptor) const noexcept
 {
-    double const speed = interceptor.velocity_mps.norm();
-
-    if (speed < config_.switch_speed_mps)
+    if (interceptor.velocity_mps.norm() < config_.switch_speed_mps)
     {
         return config_.max_thrust_n;
     }
 
+    return trimThrust(interceptor);
+}
+
+double ThrustControlLaw::trimThrust(math::CartesianState const& interceptor) const noexcept
+{
+    double const speed = interceptor.velocity_mps.norm();
     double const flight_path_angle =
         std::asin(std::clamp(interceptor.velocity_mps.z() / speed, -1.0, 1.0));
 
