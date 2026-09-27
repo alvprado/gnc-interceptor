@@ -7,8 +7,8 @@
 
 #include "guidance/controller_concept.hpp"
 #include "guidance/dynamics_model.hpp"
+#include "guidance/model_parameters.hpp"
 #include "guidance/thrust_control_law.hpp"
-#include "guidance/transverse_control_allocation.hpp"
 #include "math/cartesian_state.hpp"
 #include "math/constants.hpp"
 
@@ -21,9 +21,12 @@ struct PredictiveGuidanceControllerConfig
     int horizon{100};    ///< Number of initial and maximal stages in the iLQR horizon.
     int min_horizon{5};  ///< Lower bound on horizon length
     double dt{0.1};      ///< Integration/prediction timestep.
-    ThrustControlConfig thrust_control{};  ///< Boost/trim thresholds and vehicle model for
-                                           ///< thrust, decoupled from the transverse solve.
-    TransverseControlAllocationConfig transverse_limits{};  ///< Load factor / bank angle bounds
+    double boost_phase_switch_speed_mps{90.0};  ///< Speed below which boost thrust is commanded.
+    double boost_phase_thrust_n{150.0};         ///< Thrust commanded during the boost phase, in N.
+    ModelParameters model_params{};             ///< Vehicle model parameters.
+    double min_load_factor{-3.0};               ///< Minimum load factor.
+    double max_load_factor{9.0};                ///< Maximum load factor.
+    double max_bank_angle_rad{std::numbers::pi};  ///< Maximum |bank angle| in rad.
     Dims::ControlVec control_effort_weight{
         1.0 / (9.0 * 9.0),
         1.0 / (std::numbers::pi *
@@ -78,7 +81,8 @@ private:
     ilqr::AlignedVec<Eigen::Vector3d> target_predictions_;
     ilqr::AlignedVec<Dims::ControlVec> previous_control_trajectory_;
     ilqr::AlignedVec<Dims::StateVec> previous_state_trajectory_;
-    bool has_exited_boost_{false};  ///< Latches true the first time boost is exited; never reset.
+    bool has_exited_boost_{false};  ///< Latches true the first time boost is exited; prevents
+                                    ///< re-entering boost phase if speed drops
 };
 
 static_assert(GuidanceController<PredictiveGuidanceController>);

@@ -14,16 +14,6 @@ ThrustControlLaw::ThrustControlLaw(ThrustControlConfig const& config) noexcept :
 
 double ThrustControlLaw::step(math::CartesianState const& interceptor) const noexcept
 {
-    if (interceptor.velocity_mps.norm() < config_.switch_speed_mps)
-    {
-        return config_.max_thrust_n;
-    }
-
-    return trimThrust(interceptor);
-}
-
-double ThrustControlLaw::trimThrust(math::CartesianState const& interceptor) const noexcept
-{
     double const speed = interceptor.velocity_mps.norm();
     double const flight_path_angle =
         std::asin(std::clamp(interceptor.velocity_mps.z() / speed, -1.0, 1.0));
@@ -33,11 +23,6 @@ double ThrustControlLaw::trimThrust(math::CartesianState const& interceptor) con
         0.5 * vehicle.rho_kgpm3 * vehicle.frontal_area_m2 * vehicle.drag_coeff * speed * speed;
 
     return drag_force + math::gravity_mps2 * std::sin(flight_path_angle) * vehicle.mass_kg;
-}
-
-double ThrustControlLaw::switchSpeedMps() const noexcept
-{
-    return config_.switch_speed_mps;
 }
 
 }  // namespace guidance

@@ -8,23 +8,23 @@ namespace guidance
 {
 
 PNController::PNController(PNControllerConfig const& config) noexcept
-    : pn_control_law_(ProportionalNavigationControlLaw{config.navigation_gain}),
-      thrust_control_law_(ThrustControlLaw{config.thrust_control_config}),
-      transverse_control_allocation_(
-          TransverseControlAllocation{config.transverse_control_allocation_config})
+    : config_(config),
+      pn_control_law_(ProportionalNavigationControlLaw{config.navigation_gain}),
+      thrust_control_law_(ThrustControlLaw(ThrustControlConfig{config.vehicle})),
+      transverse_control_allocation_(TransverseControlAllocation{TransverseControlAllocationConfig{
+          config.min_load_factor, config.max_load_factor, config.max_bank_angle_rad}})
 {
 }
 
 Eigen::Vector3d PNController::step(math::CartesianState const& target,
                                    math::CartesianState const& interceptor, double) const noexcept
 {
-    double const thrust = thrust_control_law_.step(interceptor);
-
-    if (interceptor.velocity_mps.norm() < thrust_control_law_.switchSpeedMps())
+    if (interceptor.velocity_mps.norm() < config_.boost_phase_switch_speed_mps)
     {
-        return Eigen::Vector3d{thrust, 1.0, 0.0};
+        return Eigen::Vector3d{config_.boost_phase_thrust_n, 1.0, 0.0};
     }
 
+    double const thrust = thrust_control_law_.step(interceptor);
     Eigen::Vector3d const transverse_acceleration_cmd = pn_control_law_.step(target, interceptor);
     auto const transverse_allocation_output =
         transverse_control_allocation_.step(interceptor, transverse_acceleration_cmd);

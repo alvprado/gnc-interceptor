@@ -23,7 +23,7 @@ inline constexpr double min_d_scale_m{1.0};     ///< avoids div-by-zero as range
 PredictiveGuidanceController::PredictiveGuidanceController(
     PredictiveGuidanceControllerConfig config)
     : config_(std::move(config)),
-      thrust_control_law_(config_.thrust_control),
+      thrust_control_law_(ThrustControlConfig{.vehicle = config_.model_params}),
       target_predictions_(static_cast<std::size_t>(config_.horizon))
 {
 }
@@ -33,14 +33,11 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
 {
     double const speed = interceptor.velocity_mps.norm();
 
-    if (!has_exited_boost_)
+    if (!has_exited_boost_ && speed < config_.boost_phase_switch_speed_mps)
     {
-        if (speed < thrust_control_law_.switchSpeedMps())
-        {
-            return Eigen::Vector3d{thrust_control_law_.step(interceptor), 1.0, 0.0};
-        }
-        has_exited_boost_ = true;
+        return Eigen::Vector3d{config_.boost_phase_thrust_n, 1.0, 0.0};
     }
+    has_exited_boost_ = true;
 
     Dims::ControlVec const previous_control = previous_control_trajectory_.empty()
                                                   ? Dims::ControlVec{1.0, 0.0}
@@ -60,7 +57,7 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
     predictTargetPositions(target);
 
     AugmentedDiscreteUAV3DofModel<ilqr::math::HeunStep, ilqr::AutoDiff> model(
-        UAV3DofModel{config_.thrust_control.vehicle, speed}, config_.dt, ilqr::math::HeunStep{},
+        UAV3DofModel{config_.model_params, speed}, config_.dt, ilqr::math::HeunStep{},
         ilqr::AutoDiff{});
 
     double const d_scale = std::max((x0.head<3>() - target_predictions_[0]).norm(), min_d_scale_m);
@@ -89,10 +86,8 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
 
     ilqr::ILQRSolver solver{std::move(model), std::move(cost), config_.solver_config};
 
-    Dims::ControlVec const lower{config_.transverse_limits.min_load_factor,
-                                 -config_.transverse_limits.max_bank_angle_rad};
-    Dims::ControlVec const upper{config_.transverse_limits.max_load_factor,
-                                 config_.transverse_limits.max_bank_angle_rad};
+    Dims::ControlVec const lower{config_.min_load_factor, -config_.max_bank_angle_rad};
+    Dims::ControlVec const upper{config_.max_load_factor, config_.max_bank_angle_rad};
 
     auto const request =
         previous_control_trajectory_.empty()
@@ -106,7 +101,7 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
     if (result.status != ilqr::SolverStatus::Converged &&
         result.status != ilqr::SolverStatus::MaxIterations)
     {
-        return Eigen::Vector3d{thrust_control_law_.trimThrust(interceptor), previous_control[0],
+        return Eigen::Vector3d{thrust_control_law_.step(interceptor), previous_control[0],
                                previous_control[1]};
     }
 
@@ -116,7 +111,7 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
                                       result.trajectory.states().end());
 
     Dims::ControlVec const u0 = result.trajectory.control(0);
-    return Eigen::Vector3d{thrust_control_law_.trimThrust(interceptor), u0[0], u0[1]};
+    return Eigen::Vector3d{thrust_control_law_.step(interceptor), u0[0], u0[1]};
 }
 
 int PredictiveGuidanceController::computeHorizonLenght(

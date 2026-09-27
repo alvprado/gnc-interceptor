@@ -40,7 +40,7 @@ TEST_F(PNControllerTest, BelowSwitchSpeedCommandsWingsLevelBoost)
 
     auto const control = controller_.step(target, interceptor, 0.1);
 
-    EXPECT_DOUBLE_EQ(control[0], config_.thrust_control_config.max_thrust_n);
+    EXPECT_DOUBLE_EQ(control[0], config_.boost_phase_thrust_n);
     EXPECT_DOUBLE_EQ(control[1], 1.0);
     EXPECT_DOUBLE_EQ(control[2], 0.0);
 }
@@ -49,13 +49,16 @@ TEST_F(PNControllerTest, AboveSwitchSpeedMatchesManualComposition)
 {
     auto const interceptor = make_cartesian(
         Eigen::Vector3d::Zero(),
-        Eigen::Vector3d{config_.thrust_control_config.switch_speed_mps + 20.0, 0.0, 0.0});
+        Eigen::Vector3d{config_.boost_phase_switch_speed_mps + 20.0, 0.0, 0.0});
     auto const target = make_cartesian(Eigen::Vector3d{1000.0, 100.0, 0.0},
                                        Eigen::Vector3d{-100.0, 0.0, 0.0});
 
     ProportionalNavigationControlLaw const pn_law{config_.navigation_gain};
-    ThrustControlLaw const thrust_law{config_.thrust_control_config};
-    TransverseControlAllocation const allocation{config_.transverse_control_allocation_config};
+    ThrustControlLaw const thrust_law{ThrustControlConfig{.vehicle = config_.vehicle}};
+    TransverseControlAllocation const allocation{
+        TransverseControlAllocationConfig{.min_load_factor = config_.min_load_factor,
+                                          .max_load_factor = config_.max_load_factor,
+                                          .max_bank_angle_rad = config_.max_bank_angle_rad}};
 
     auto const a_c = pn_law.step(target, interceptor);
     auto const allocation_out = allocation.step(interceptor, a_c);
@@ -72,7 +75,7 @@ TEST_F(PNControllerTest, AboveSwitchSpeedEngagesGuidanceForNonCollinearGeometry)
 {
     auto const interceptor = make_cartesian(
         Eigen::Vector3d::Zero(),
-        Eigen::Vector3d{config_.thrust_control_config.switch_speed_mps + 20.0, 0.0, 0.0});
+        Eigen::Vector3d{config_.boost_phase_switch_speed_mps + 20.0, 0.0, 0.0});
     auto const target = make_cartesian(Eigen::Vector3d{1000.0, 100.0, 0.0},
                                        Eigen::Vector3d{-100.0, 0.0, 0.0});
 
