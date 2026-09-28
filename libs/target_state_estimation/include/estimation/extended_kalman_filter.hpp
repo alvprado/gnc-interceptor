@@ -74,7 +74,10 @@ private:
     [[nodiscard]] StateJacobian stateTransitionMatrix(double dt) const;
 
     /// @brief The discrete process noise covariance for a timestep dt.
-    /// @param[in] dt The timestep, in seconds.
+    /// @details Continuous white-noise-jerk model: jerk is white noise with
+    /// a power spectral density of jerk_noise_var, propagated through the state
+    // transition dynamics.
+    /// @param[in] dt The timestep in seconds.
     /// @returns The process noise covariance, driven by jerk_noise_var_.
     [[nodiscard]] StateCov processNoiseCovariance(double dt) const;
 
