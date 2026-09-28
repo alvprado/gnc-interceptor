@@ -7,9 +7,9 @@
 #include "csv_logger.hpp"
 #include "guidance/pn_controller.hpp"
 #include "guidance/predictive_guidance_controller.hpp"
-#include "math/cartesian_state.hpp"
 #include "math/constants.hpp"
 #include "math/integrators.hpp"
+#include "math/state_types.hpp"
 #include "simulation/simulator.hpp"
 #include "simulation/uav_3dof_model.hpp"
 #include "target/maneuvers.hpp"
@@ -74,7 +74,8 @@ int main()
 
     // Interceptor: at the origin, launched pointing at the target's initial
     // position.
-    math::CartesianState state = initializeInterceptorState(target_traj.evaluateTargetStateAt(0.0));
+    math::VehicleState state{initializeInterceptorState(target_traj.evaluateTargetStateAt(0.0)),
+                             Eigen::Quaterniond::Identity()};
 
     constexpr double dt{0.01};
     constexpr double duration_s{100.0};
@@ -89,12 +90,13 @@ int main()
     double t = 0.0;
     for (int i = 0; i <= steps; ++i)
     {
-        UAV3DofModel::StateVec const model_state = model.fromCartesianState(state);
+        UAV3DofModel::StateVec const model_state = model.fromVehicleState(state);
 
         auto const target_state = target_traj.evaluateTargetStateAt(t);
-        Eigen::Vector3d const control = use_predictive_guidance
-                                            ? predictive_controller.step(target_state, state, dt)
-                                            : pn_controller.step(target_state, state, dt);
+        Eigen::Vector3d const control =
+            use_predictive_guidance
+                ? predictive_controller.step(target_state, state.cartesian_state, dt)
+                : pn_controller.step(target_state, state.cartesian_state, dt);
         samples.push_back(TrajectorySample{t, model_state, target_state, control});
 
         if (i % 100 == 0)
@@ -112,7 +114,7 @@ int main()
         state = sim.step(state, control, dt);
         t += dt;
 
-        if (interceptionOccured(target_state, state))
+        if (interceptionOccured(target_state, state.cartesian_state))
         {
             std::printf("\ninterception occurred!\n");
             break;

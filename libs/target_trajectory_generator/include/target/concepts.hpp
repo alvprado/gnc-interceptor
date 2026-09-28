@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math/cartesian_state.hpp"
+#include "math/state_types.hpp"
 
 #include <concepts>
 

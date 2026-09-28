@@ -1,7 +1,8 @@
 #include "simulation/uav_3dof_model.hpp"
 
-#include "math/cartesian_state.hpp"
+#include "math/angles.hpp"
 #include "math/constants.hpp"
+#include "math/state_types.hpp"
 
 #include <gtest/gtest.h>
 
@@ -62,32 +63,39 @@ TEST_F(UAV3DofModelTest, TranslationalKinematicsMatchVelocityVector)
     EXPECT_NEAR(dx[2], v * std::sin(gamma), k_tol);
 }
 
-TEST_F(UAV3DofModelTest, ToCartesianStateMatchesPositionAndVelocityVector)
+TEST_F(UAV3DofModelTest, ToVehicleStateMatchesPositionVelocityAndOrientation)
 {
     constexpr double v{80.0};
     constexpr double psi{0.7};
     constexpr double gamma{0.3};
-    auto const cartesian = model_.toCartesianState(make_state(10.0, 20.0, 30.0, v, psi, gamma));
+    constexpr double bank{0.4};
+    auto const vehicle = model_.toVehicleState(make_state(10.0, 20.0, 30.0, v, psi, gamma),
+                                               make_control(0.0, 0.0, bank));
 
-    EXPECT_TRUE(cartesian.position_m.isApprox(Eigen::Vector3d{10.0, 20.0, 30.0}));
-    EXPECT_NEAR(cartesian.velocity_mps.x(), v * std::cos(gamma) * std::cos(psi), k_tol);
-    EXPECT_NEAR(cartesian.velocity_mps.y(), v * std::cos(gamma) * std::sin(psi), k_tol);
-    EXPECT_NEAR(cartesian.velocity_mps.z(), v * std::sin(gamma), k_tol);
+    EXPECT_TRUE(vehicle.cartesian_state.position_m.isApprox(Eigen::Vector3d{10.0, 20.0, 30.0}));
+    EXPECT_NEAR(vehicle.cartesian_state.velocity_mps.x(), v * std::cos(gamma) * std::cos(psi),
+               k_tol);
+    EXPECT_NEAR(vehicle.cartesian_state.velocity_mps.y(), v * std::cos(gamma) * std::sin(psi),
+               k_tol);
+    EXPECT_NEAR(vehicle.cartesian_state.velocity_mps.z(), v * std::sin(gamma), k_tol);
+    EXPECT_TRUE(vehicle.orientation.isApprox(math::attitudeFromHeadingPitchBank(psi, gamma, bank)));
 }
 
-TEST_F(UAV3DofModelTest, FromCartesianStateInvertsToCartesianState)
+TEST_F(UAV3DofModelTest, FromVehicleStateInvertsToVehicleStatePositionVelocity)
 {
     auto const original = make_state(10.0, 20.0, 30.0, 80.0, 0.7, 0.3);
-    auto const roundtripped = model_.fromCartesianState(model_.toCartesianState(original));
+    auto const roundtripped =
+        model_.fromVehicleState(model_.toVehicleState(original, make_control(0.0, 0.0, 0.0)));
 
     EXPECT_TRUE(roundtripped.isApprox(original));
 }
 
-TEST_F(UAV3DofModelTest, FromCartesianStateAtRestIsWellDefined)
+TEST_F(UAV3DofModelTest, FromVehicleStateAtRestIsWellDefined)
 {
-    math::CartesianState const rest{Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d::Zero(),
-                                    Eigen::Vector3d::Zero()};
-    auto const state = model_.fromCartesianState(rest);
+    math::VehicleState const rest{
+        {Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()},
+        Eigen::Quaterniond::Identity()};
+    auto const state = model_.fromVehicleState(rest);
 
     EXPECT_TRUE(state.allFinite());
     EXPECT_DOUBLE_EQ(state[3], 0.0);

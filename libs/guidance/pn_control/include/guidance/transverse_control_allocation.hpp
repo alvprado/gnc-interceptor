@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <numbers>
 
-#include "math/cartesian_state.hpp"
+#include "math/state_types.hpp"
 
 namespace guidance
 {

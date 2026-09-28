@@ -1,7 +1,7 @@
 #include "guidance/transverse_control_allocation.hpp"
 
-#include "math/cartesian_state.hpp"
 #include "math/constants.hpp"
+#include "math/state_types.hpp"
 
 #include <gtest/gtest.h>
 

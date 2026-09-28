@@ -1,6 +1,6 @@
 #include "guidance/pn_control_law.hpp"
 
-#include "math/cartesian_state.hpp"
+#include "math/state_types.hpp"
 
 #include <gtest/gtest.h>
 

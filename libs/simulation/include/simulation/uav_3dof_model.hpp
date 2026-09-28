@@ -3,8 +3,8 @@
 #include <Eigen/Dense>
 #include <numbers>
 
-#include "math/cartesian_state.hpp"
 #include "math/constants.hpp"
+#include "math/state_types.hpp"
 
 namespace simulation
 {
@@ -54,17 +54,23 @@ public:
     [[nodiscard]] StateVec operator()(StateVec const& state,
                                       ControlVec const& control) const noexcept;
 
-    /// @brief Map a state to its Cartesian view.
+    /// @brief Map a state and control to its Cartesian + orientation view.
     /// @param[in] state The state to convert.
-    /// @returns The position and velocity in the inertial frame.
-    [[nodiscard]] math::CartesianState toCartesianState(StateVec const& state) const noexcept;
+    /// @param[in] control The control the state was reached under (its bank
+    /// angle becomes the commanded roll).
+    /// @returns The position, velocity and derived body attitude.
+    [[nodiscard]] math::VehicleState toVehicleState(StateVec const& state,
+                                                    ControlVec const& control) const noexcept;
 
-    /// @brief Map a Cartesian state back to the model's native state.
-    /// @details Exact inverse of toCartesianState(): gamma's range makes
-    /// (psi, gamma) a bijection with the velocity direction.
-    /// @param[in] cartesian The position and velocity to convert.
+    /// @brief Map a vehicle state back to the model's native state.
+    /// @details Exact inverse of the position/velocity view returned by
+    /// toVehicleState(): gamma's range makes (psi, gamma) a bijection with
+    /// the velocity direction. Orientation is ignored: it isn't part of the
+    /// native state (bank isn't recoverable from state alone; it's a
+    /// control, not a state).
+    /// @param[in] vehicle The vehicle state to convert.
     /// @returns The equivalent native state.
-    [[nodiscard]] StateVec fromCartesianState(math::CartesianState const& cartesian) const noexcept;
+    [[nodiscard]] StateVec fromVehicleState(math::VehicleState const& vehicle) const noexcept;
 
     /// @brief Clamp a control to the actuator envelope.
     /// @param[in] control The commanded control.

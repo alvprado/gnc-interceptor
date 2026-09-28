@@ -8,7 +8,7 @@
 #include "guidance/pn_control_law.hpp"
 #include "guidance/thrust_control_law.hpp"
 #include "guidance/transverse_control_allocation.hpp"
-#include "math/cartesian_state.hpp"
+#include "math/state_types.hpp"
 
 namespace guidance
 {

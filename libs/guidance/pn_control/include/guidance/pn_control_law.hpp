@@ -2,7 +2,7 @@
 
 #include <Eigen/Dense>
 
-#include "math/cartesian_state.hpp"
+#include "math/state_types.hpp"
 
 namespace guidance
 {

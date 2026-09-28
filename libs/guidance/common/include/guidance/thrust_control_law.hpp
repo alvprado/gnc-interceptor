@@ -1,7 +1,7 @@
 #pragma once
 
 #include "guidance/model_parameters.hpp"
-#include "math/cartesian_state.hpp"
+#include "math/state_types.hpp"
 
 namespace guidance
 {

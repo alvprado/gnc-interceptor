@@ -1,7 +1,7 @@
 #include "simulation/simulator.hpp"
 
-#include "math/cartesian_state.hpp"
 #include "math/integrators.hpp"
+#include "math/state_types.hpp"
 #include "simulation/uav_3dof_model.hpp"
 
 #include <gtest/gtest.h>
@@ -43,12 +43,12 @@ template <typename Integrator_T>
                               Control const& u, double dt, int steps)
 {
     UAVSimulator<UAV3DofModel, Integrator_T> const sim{model, integrator};
-    math::CartesianState cartesian = model.toCartesianState(x);
+    math::VehicleState vehicle = model.toVehicleState(x, u);
     for (int i = 0; i < steps; ++i)
     {
-        cartesian = sim.step(cartesian, u, dt);
+        vehicle = sim.step(vehicle, u, dt);
     }
-    return model.fromCartesianState(cartesian);
+    return model.fromVehicleState(vehicle);
 }
 
 class SimulatorTest : public ::testing::Test
@@ -69,10 +69,10 @@ TEST_F(SimulatorTest, ZeroTimestepLeavesTheStateUnchanged)
 {
     RK4Sim const sim{model_, math::RK4Step{}};
     auto const x = make_state(1.0, 2.0, 3.0, 100.0, 0.3, 0.2);
-    auto const cartesian = model_.toCartesianState(x);
+    auto const u = make_control(50.0, 2.0, 0.4);
 
-    auto const result = sim.step(cartesian, make_control(50.0, 2.0, 0.4), 0.0);
-    EXPECT_TRUE(model_.fromCartesianState(result).isApprox(x));
+    auto const result = sim.step(model_.toVehicleState(x, u), u, 0.0);
+    EXPECT_TRUE(model_.fromVehicleState(result).isApprox(x));
 }
 
 TEST_F(SimulatorTest, StepMatchesManualConversionIntegrationAndConversionBack)
@@ -81,14 +81,16 @@ TEST_F(SimulatorTest, StepMatchesManualConversionIntegrationAndConversionBack)
     auto const x = make_state(0.0, 0.0, 0.0, 90.0, 0.2, 0.1);
     auto const u = make_control(50.0, 2.0, 0.4);
 
-    auto const result = sim.step(model_.toCartesianState(x), u, 0.01);
+    auto const result = sim.step(model_.toVehicleState(x, u), u, 0.01);
 
     auto const expected_state =
         model_.clampState(math::RK4Step{}(model_, x, model_.clampControl(u), 0.01));
-    auto const expected = model_.toCartesianState(expected_state);
+    auto const expected = model_.toVehicleState(expected_state, model_.clampControl(u));
 
-    EXPECT_TRUE(result.position_m.isApprox(expected.position_m));
-    EXPECT_TRUE(result.velocity_mps.isApprox(expected.velocity_mps));
+    EXPECT_TRUE(result.cartesian_state.position_m.isApprox(expected.cartesian_state.position_m));
+    EXPECT_TRUE(
+        result.cartesian_state.velocity_mps.isApprox(expected.cartesian_state.velocity_mps));
+    EXPECT_TRUE(result.orientation.isApprox(expected.orientation));
 }
 
 TEST_F(SimulatorTest, SteadyLevelFlightMatchesTheClosedForm)
@@ -150,16 +152,19 @@ TEST_F(SimulatorTest, StepAppliesTheControlLimits)
     tight.max_load_factor = 1.0;
     UAV3DofModel const restricted{params_, tight};
 
-    auto const cartesian = restricted.toCartesianState(make_state(0.0, 0.0, 0.0, 100.0, 0.0, 0.0));
     auto const excessive = make_control(50.0, 9.0, 0.0);
     auto const feasible = make_control(50.0, 1.0, 0.0);
+    auto const vehicle =
+        restricted.toVehicleState(make_state(0.0, 0.0, 0.0, 100.0, 0.0, 0.0), excessive);
 
     RK4Sim const sim{restricted, math::RK4Step{}};
-    auto const from_excessive = sim.step(cartesian, excessive, 0.01);
-    auto const from_feasible = sim.step(cartesian, feasible, 0.01);
+    auto const from_excessive = sim.step(vehicle, excessive, 0.01);
+    auto const from_feasible = sim.step(vehicle, feasible, 0.01);
 
-    EXPECT_TRUE(from_excessive.position_m.isApprox(from_feasible.position_m));
-    EXPECT_TRUE(from_excessive.velocity_mps.isApprox(from_feasible.velocity_mps))
+    EXPECT_TRUE(from_excessive.cartesian_state.position_m.isApprox(
+        from_feasible.cartesian_state.position_m));
+    EXPECT_TRUE(from_excessive.cartesian_state.velocity_mps.isApprox(
+        from_feasible.cartesian_state.velocity_mps))
         << "a command above the limit must behave as the limit";
 }
 
@@ -169,11 +174,11 @@ TEST_F(SimulatorTest, StepKeepsTheStateInsideTheEnvelope)
     auto const u = make_control(0.0, 0.0, 0.0);
     RK4Sim const sim{model_, math::RK4Step{}};
 
-    auto cartesian = model_.toCartesianState(make_state(0.0, 0.0, 0.0, 50.0, 0.0, k_half_pi));
+    auto vehicle = model_.toVehicleState(make_state(0.0, 0.0, 0.0, 50.0, 0.0, k_half_pi), u);
     for (int i = 0; i < 400; ++i)
     {
-        cartesian = sim.step(cartesian, u, 0.02);
-        auto const x = model_.fromCartesianState(cartesian);
+        vehicle = sim.step(vehicle, u, 0.02);
+        auto const x = model_.fromVehicleState(vehicle);
         ASSERT_TRUE(x.allFinite()) << "diverged at step " << i;
         EXPECT_GE(x[3], limits_.min_speed_mps);
         EXPECT_LE(x[3], limits_.max_speed_mps);

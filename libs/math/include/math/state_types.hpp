@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 namespace math
 {
@@ -14,4 +15,10 @@ struct CartesianState
     Eigen::Vector3d acceleration_mps2{Eigen::Vector3d::Zero()};
 };
 
+/// @brief Cartesian state of a vehicle plus its body orientation.
+struct VehicleState
+{
+    CartesianState cartesian_state{};
+    Eigen::Quaterniond orientation{Eigen::Quaterniond::Identity()};
+};
 }  // namespace math
