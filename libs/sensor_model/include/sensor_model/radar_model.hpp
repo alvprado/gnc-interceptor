@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <random>
 
 #include "math/state_types.hpp"
@@ -18,17 +17,14 @@ struct RadarModelConfig
     double elevation_var{4.0e-6};  ///< Elevation measurement noise variance, in rad^2.
 };
 
-/// @brief Simulation time, in seconds since the run started.
-using Timestamp = std::chrono::duration<double>;
-
 /// @brief A single radar measurement: range, range rate, azimuth and elevation.
 struct SensorMeasurement
 {
-    Timestamp timestamp{0.0};    ///< Simulation time this measurement was taken at.
-    double range_m{0.0};         ///< Slant range to the target, in m.
-    double range_rate_mps{0.0};  ///< Closing (negative) / opening (positive) rate, in m/s.
-    double azimuth_rad{0.0};     ///< Bearing to the target in the sensor's body frame, in rad.
-    double elevation_rad{0.0};   ///< Elevation of the target in the sensor's body frame, in rad.
+    math::Timestamp timestamp{0.0};  ///< Simulation time this measurement was taken at.
+    double range_m{0.0};             ///< Slant range to the target, in m.
+    double range_rate_mps{0.0};      ///< Closing (negative) / opening (positive) rate, in m/s.
+    double azimuth_rad{0.0};         ///< Bearing to the target in the sensor's body frame, in rad.
+    double elevation_rad{0.0};       ///< Elevation of the target in the sensor's body frame, in rad.
 };
 
 /// @brief Radar sensor model: converts target/interceptor ground-truth states
@@ -63,7 +59,7 @@ public:
     /// @returns The noisy [range, range rate, azimuth, elevation] measurement.
     [[nodiscard]] SensorMeasurement step(math::CartesianState const& target_state,
                                          math::VehicleState const& interceptor_state,
-                                         Timestamp timestamp);
+                                         math::Timestamp timestamp);
 
 private:
     GaussianNoiseGenerator range_noise_;

@@ -13,7 +13,7 @@ namespace
 {
 
 constexpr double k_tol{1.0e-6};
-constexpr Timestamp k_timestamp{0.0};
+constexpr math::Timestamp k_timestamp{0.0};
 
 /// @brief A RadarModelConfig with (near-)zero noise, for exercising the
 /// noise-free geometry: variances of 0 are clamped internally to a tiny
@@ -127,7 +127,7 @@ TEST(RadarModelTest, TimestampIsCarriedThroughUnchanged)
     RadarModel radar{k_noiseless_config, 1};
     auto const target = makeCartesian(Eigen::Vector3d{100.0, 0.0, 0.0}, Eigen::Vector3d::Zero());
     auto const interceptor = makeVehicle(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
-    Timestamp const timestamp{12.5};
+    math::Timestamp const timestamp{12.5};
 
     auto const measurement = radar.step(target, interceptor, timestamp);
 

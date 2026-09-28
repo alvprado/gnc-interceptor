@@ -27,7 +27,7 @@ RadarModel::RadarModel(RadarModelConfig const& config, std::mt19937::result_type
 
 SensorMeasurement RadarModel::step(math::CartesianState const& target_state,
                                    math::VehicleState const& interceptor_state,
-                                   Timestamp timestamp)
+                                   math::Timestamp timestamp)
 {
     Eigen::Vector3d const r_world =
         target_state.position_m - interceptor_state.cartesian.position_m;

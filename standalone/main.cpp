@@ -100,7 +100,7 @@ int main()
             use_predictive_guidance
                 ? predictive_controller.step(target_state, state.cartesian, dt)
                 : pn_controller.step(target_state, state.cartesian, dt);
-        auto const measurement = sensor.step(target_state, state, sensor_model::Timestamp{t});
+        auto const measurement = sensor.step(target_state, state, math::Timestamp{t});
         samples.push_back(TrajectorySample{t, target_state, state, measurement, control});
 
         if (i % 100 == 0)

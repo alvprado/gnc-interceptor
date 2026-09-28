@@ -3,8 +3,13 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
+#include <chrono>
+
 namespace math
 {
+
+/// @brief Simulation time, in seconds since the run started.
+using Timestamp = std::chrono::duration<double>;
 
 /// @brief Cartesian state of a point at an instant: position, velocity and
 /// acceleration in the inertial frame.
