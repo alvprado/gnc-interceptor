@@ -21,7 +21,7 @@ find_package(autodiff QUIET)
 
 include(FetchContent)
 
-# ilqr-cpp: header-only iLQR solver used by libs/predictive_guidance.
+# ilqr-cpp: header-only iLQR solver used by libs/guidance/predictive_control.
 FetchContent_Declare(ilqr
     GIT_REPOSITORY https://github.com/alvprado/ilqr-cpp.git
     GIT_TAG d2a73054dbfaec8a536ed5a05239e225970c0bb1
@@ -51,5 +51,4 @@ add_subdirectory(libs/math)
 add_subdirectory(libs/simulation)
 add_subdirectory(libs/target)
 add_subdirectory(libs/guidance)
-add_subdirectory(libs/predictive_guidance)
 add_subdirectory(standalone)

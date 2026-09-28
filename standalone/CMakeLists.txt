@@ -6,8 +6,8 @@ add_executable(standalone
 
 target_link_libraries(standalone
     PRIVATE gnc::simulation
-            gnc::guidance
-            gnc::predictive_guidance
+            gnc::guidance::pn
+            gnc::guidance::predictive
             gnc::target
             gnc::math
             gnc_compile_options)

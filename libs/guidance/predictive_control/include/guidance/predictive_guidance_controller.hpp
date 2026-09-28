@@ -37,9 +37,10 @@ struct PredictiveGuidanceControllerConfig
     ilqr::SolverConfig<double> solver_config{};  ///< iLQR iteration/regularization tuning
 };
 
-/// @brief Predictive guidance controller: builds and solves an iLQR problem over load factor and
-/// bank angle from the current target and interceptor state each update, and returns its optimal
-/// control alongside a thrust command from a decoupled boost/trim law.
+/// @brief Predictive guidance controller: builds and solves an iLQR problem in a receiding horizon
+/// MPC fashion for load factor and bank angle controls from the current target and interceptor
+/// state each update, and returns its optimal control alongside a thrust command from a decoupled
+/// boost/trim law.
 class PredictiveGuidanceController
 {
 public:

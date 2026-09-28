@@ -1,22 +1,7 @@
-# guidance: PN guidance controller behind a common controller interface.
-# Predictive (iLQR) guidance is a sibling library, libs/predictive_guidance - it needs ilqr-cpp
+# guidance: common utilities, a PN guidance controller and a predictive
+# (iLQR) guidance controller, each behind a common controller interface
+# (see common/include/guidance/controller_concept.hpp).
 
-add_library(gnc_guidance
-    src/pn_control_law.cpp
-    src/pn_controller.cpp
-    src/thrust_control_law.cpp
-    src/transverse_control_allocation.cpp)
-add_library(gnc::guidance ALIAS gnc_guidance)
-
-target_include_directories(gnc_guidance PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-
-target_link_libraries(gnc_guidance
-    PUBLIC gnc::math
-    PRIVATE gnc_compile_options)
-
-target_compile_features(gnc_guidance PUBLIC cxx_std_20)
-
-if(GNC_BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
-    add_subdirectory(tests)
-endif()
+add_subdirectory(common)
+add_subdirectory(pn_control)
+add_subdirectory(predictive_control)
