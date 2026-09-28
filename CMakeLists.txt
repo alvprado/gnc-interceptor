@@ -49,6 +49,6 @@ endif()
 
 add_subdirectory(libs/math)
 add_subdirectory(libs/simulation)
-add_subdirectory(libs/target)
+add_subdirectory(libs/target_trajectory_generator)
 add_subdirectory(libs/guidance)
 add_subdirectory(standalone)

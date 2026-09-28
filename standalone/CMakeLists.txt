@@ -8,6 +8,6 @@ target_link_libraries(standalone
     PRIVATE gnc::simulation
             gnc::guidance::pn
             gnc::guidance::predictive
-            gnc::target
+            gnc::target_trajectory_generator
             gnc::math
             gnc_compile_options)
