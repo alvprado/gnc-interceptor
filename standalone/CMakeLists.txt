@@ -8,6 +8,7 @@ target_link_libraries(standalone
     PRIVATE gnc::simulation
             gnc::guidance::pn
             gnc::guidance::predictive
+            gnc::sensor_model
             gnc::target_trajectory_generator
             gnc::math
             gnc_compile_options)

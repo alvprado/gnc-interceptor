@@ -7,9 +7,11 @@
 #include "csv_logger.hpp"
 #include "guidance/pn_controller.hpp"
 #include "guidance/predictive_guidance_controller.hpp"
+#include "math/angles.hpp"
 #include "math/constants.hpp"
 #include "math/integrators.hpp"
 #include "math/state_types.hpp"
+#include "sensor_model/radar_model.hpp"
 #include "simulation/simulator.hpp"
 #include "simulation/uav_3dof_model.hpp"
 #include "target/maneuvers.hpp"
@@ -77,6 +79,9 @@ int main()
     math::VehicleState state{initializeInterceptorState(target_traj.evaluateTargetStateAt(0.0)),
                              Eigen::Quaterniond::Identity()};
 
+    // Radar model
+    sensor_model::RadarModel sensor{sensor_model::RadarModelConfig{}};
+
     constexpr double dt{0.01};
     constexpr double duration_s{100.0};
     constexpr int steps{static_cast<int>(duration_s / dt)};
@@ -90,20 +95,23 @@ int main()
     double t = 0.0;
     for (int i = 0; i <= steps; ++i)
     {
-        UAV3DofModel::StateVec const model_state = model.fromVehicleState(state);
-
         auto const target_state = target_traj.evaluateTargetStateAt(t);
         Eigen::Vector3d const control =
             use_predictive_guidance
-                ? predictive_controller.step(target_state, state.cartesian_state, dt)
-                : pn_controller.step(target_state, state.cartesian_state, dt);
-        samples.push_back(TrajectorySample{t, model_state, target_state, control});
+                ? predictive_controller.step(target_state, state.cartesian, dt)
+                : pn_controller.step(target_state, state.cartesian, dt);
+        auto const measurement = sensor.step(target_state, state, sensor_model::Timestamp{t});
+        samples.push_back(TrajectorySample{t, target_state, state, measurement, control});
 
         if (i % 100 == 0)
         {
-            std::printf("%6.1f  %10.2f %10.2f %10.2f  %8.2f  %10.2f\n", t, model_state[0],
-                        model_state[1], model_state[2], model_state[3],
-                        model_state[5] * 180.0 / std::numbers::pi);
+            auto const& position = state.cartesian.position_m;
+            double const speed = state.cartesian.velocity_mps.norm();
+            double const fpa_deg =
+                math::eulerAnglesFromAttitude(state.attitude).flight_path_angle_rad * 180.0 /
+                std::numbers::pi;
+            std::printf("%6.1f  %10.2f %10.2f %10.2f  %8.2f  %10.2f\n", t, position.x(),
+                        position.y(), position.z(), speed, fpa_deg);
         }
 
         if (i == steps)
@@ -114,7 +122,7 @@ int main()
         state = sim.step(state, control, dt);
         t += dt;
 
-        if (interceptionOccured(target_state, state.cartesian_state))
+        if (interceptionOccured(target_state, state.cartesian))
         {
             std::printf("\ninterception occurred!\n");
             break;

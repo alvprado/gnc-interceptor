@@ -30,9 +30,9 @@ SensorMeasurement RadarModel::step(math::CartesianState const& target_state,
                                    Timestamp timestamp)
 {
     Eigen::Vector3d const r_world =
-        target_state.position_m - interceptor_state.cartesian_state.position_m;
+        target_state.position_m - interceptor_state.cartesian.position_m;
     Eigen::Vector3d const v_r_world =
-        target_state.velocity_mps - interceptor_state.cartesian_state.velocity_mps;
+        target_state.velocity_mps - interceptor_state.cartesian.velocity_mps;
 
     double const real_range = r_world.norm();
     double const range_safe = std::max(real_range, min_range_m);
@@ -41,7 +41,7 @@ SensorMeasurement RadarModel::step(math::CartesianState const& target_state,
     double const noisy_range_rate =
         (r_world.dot(v_r_world) / range_safe) + range_rate_noise_.sample();
 
-    Eigen::Vector3d const r_body = interceptor_state.orientation.conjugate() * r_world;
+    Eigen::Vector3d const r_body = interceptor_state.attitude.conjugate() * r_world;
 
     double const noisy_azimuth =
         math::wrapToPi(std::atan2(r_body.y(), r_body.x()) + azimuth_noise_.sample());

@@ -78,5 +78,26 @@ TEST(OrientationTest, BankRotatesTheUpAxisAboutForward)
     EXPECT_TRUE(up.isApprox(Eigen::Vector3d{0.0, -1.0, 0.0}, k_tol));
 }
 
+TEST(OrientationTest, EulerAnglesFromAttitudeInvertsAttitudeFromHeadingPitchBank)
+{
+    // Avoids exactly +-pi, where atan2's (-pi, pi] wraparound makes exact
+    // equality brittle without being a meaningfully different case.
+    for (double heading : {0.0, 0.7, -1.3, std::numbers::pi / 2.0, 3.0})
+    {
+        for (double fpa : {0.0, 0.4, -0.9, std::numbers::pi / 2.0 - 0.01})
+        {
+            for (double bank : {0.0, 0.5, -2.0, 1.7, 2.9})
+            {
+                auto const q = attitudeFromHeadingPitchBank(heading, fpa, bank);
+                auto const recovered = eulerAnglesFromAttitude(q);
+
+                EXPECT_NEAR(recovered.heading_rad, heading, k_tol);
+                EXPECT_NEAR(recovered.flight_path_angle_rad, fpa, k_tol);
+                EXPECT_NEAR(recovered.bank_rad, bank, k_tol);
+            }
+        }
+    }
+}
+
 }  // namespace
 }  // namespace math

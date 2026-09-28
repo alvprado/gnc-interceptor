@@ -87,10 +87,10 @@ TEST_F(SimulatorTest, StepMatchesManualConversionIntegrationAndConversionBack)
         model_.clampState(math::RK4Step{}(model_, x, model_.clampControl(u), 0.01));
     auto const expected = model_.toVehicleState(expected_state, model_.clampControl(u));
 
-    EXPECT_TRUE(result.cartesian_state.position_m.isApprox(expected.cartesian_state.position_m));
+    EXPECT_TRUE(result.cartesian.position_m.isApprox(expected.cartesian.position_m));
     EXPECT_TRUE(
-        result.cartesian_state.velocity_mps.isApprox(expected.cartesian_state.velocity_mps));
-    EXPECT_TRUE(result.orientation.isApprox(expected.orientation));
+        result.cartesian.velocity_mps.isApprox(expected.cartesian.velocity_mps));
+    EXPECT_TRUE(result.attitude.isApprox(expected.attitude));
 }
 
 TEST_F(SimulatorTest, SteadyLevelFlightMatchesTheClosedForm)
@@ -161,10 +161,10 @@ TEST_F(SimulatorTest, StepAppliesTheControlLimits)
     auto const from_excessive = sim.step(vehicle, excessive, 0.01);
     auto const from_feasible = sim.step(vehicle, feasible, 0.01);
 
-    EXPECT_TRUE(from_excessive.cartesian_state.position_m.isApprox(
-        from_feasible.cartesian_state.position_m));
-    EXPECT_TRUE(from_excessive.cartesian_state.velocity_mps.isApprox(
-        from_feasible.cartesian_state.velocity_mps))
+    EXPECT_TRUE(from_excessive.cartesian.position_m.isApprox(
+        from_feasible.cartesian.position_m));
+    EXPECT_TRUE(from_excessive.cartesian.velocity_mps.isApprox(
+        from_feasible.cartesian.velocity_mps))
         << "a command above the limit must behave as the limit";
 }
 

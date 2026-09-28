@@ -38,4 +38,30 @@ namespace math
     return yaw * pitch * roll;
 }
 
+/// @brief Heading, flight-path angle and bank, as built by
+/// attitudeFromHeadingPitchBank().
+struct EulerAngles
+{
+    double heading_rad{0.0};
+    double flight_path_angle_rad{0.0};
+    double bank_rad{0.0};
+};
+
+/// @brief Exact inverse of attitudeFromHeadingPitchBank(), for
+/// flight_path_angle_rad in [-pi/2, pi/2] (this project's convention).
+/// @param[in] attitude A body-to-inertial attitude built by
+/// attitudeFromHeadingPitchBank().
+/// @returns The heading, flight-path angle and bank that produced it.
+[[nodiscard]] inline EulerAngles eulerAnglesFromAttitude(Eigen::Quaterniond const& attitude) noexcept
+{
+    Eigen::Matrix3d const rotation = attitude.toRotationMatrix();
+
+    EulerAngles result;
+    result.heading_rad = std::atan2(rotation(1, 0), rotation(0, 0));
+    result.flight_path_angle_rad = std::atan2(
+        rotation(2, 0), std::sqrt(rotation(0, 0) * rotation(0, 0) + rotation(1, 0) * rotation(1, 0)));
+    result.bank_rad = std::atan2(rotation(2, 1), rotation(2, 2));
+    return result;
+}
+
 }  // namespace math

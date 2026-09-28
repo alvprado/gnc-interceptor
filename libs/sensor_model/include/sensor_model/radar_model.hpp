@@ -12,10 +12,10 @@ namespace sensor_model
 /// @brief Per-channel measurement noise variance for RadarModel.
 struct RadarModelConfig
 {
-    double range_var{1.0};       ///< Range measurement noise variance, in m^2.
-    double range_rate_var{1.0};  ///< Range-rate measurement noise variance, in (m/s)^2.
-    double azimuth_var{1.0};     ///< Azimuth measurement noise variance, in rad^2.
-    double elevation_var{1.0};   ///< Elevation measurement noise variance, in rad^2.
+    double range_var{100.0};       ///< Range measurement noise variance, in m^2.
+    double range_rate_var{4.0};    ///< Range-rate measurement noise variance, in (m/s)^2.
+    double azimuth_var{4.0e-6};    ///< Azimuth measurement noise variance, in rad^2.
+    double elevation_var{4.0e-6};  ///< Elevation measurement noise variance, in rad^2.
 };
 
 /// @brief Simulation time, in seconds since the run started.

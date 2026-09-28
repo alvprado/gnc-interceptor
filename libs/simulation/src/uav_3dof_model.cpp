@@ -70,22 +70,22 @@ math::VehicleState UAV3DofModel::toVehicleState(StateVec const& state,
     auto const cos_gamma = std::cos(gamma);
 
     math::VehicleState vehicle;
-    vehicle.cartesian_state.position_m = state.head<3>();
-    vehicle.cartesian_state.velocity_mps = Eigen::Vector3d{
+    vehicle.cartesian.position_m = state.head<3>();
+    vehicle.cartesian.velocity_mps = Eigen::Vector3d{
         v * cos_gamma * std::cos(psi), v * cos_gamma * std::sin(psi), v * std::sin(gamma)};
-    vehicle.orientation = math::attitudeFromHeadingPitchBank(psi, gamma, control[2]);
+    vehicle.attitude = math::attitudeFromHeadingPitchBank(psi, gamma, control[2]);
     return vehicle;
 }
 
 UAV3DofModel::StateVec UAV3DofModel::fromVehicleState(math::VehicleState const& vehicle) const noexcept
 {
-    auto const& velocity = vehicle.cartesian_state.velocity_mps;
+    auto const& velocity = vehicle.cartesian.velocity_mps;
     auto const v = velocity.norm();
     auto const psi = std::atan2(velocity.y(), velocity.x());
     auto const gamma = (v > 0.0) ? std::asin(std::clamp(velocity.z() / v, -1.0, 1.0)) : 0.0;
 
     StateVec state;
-    state.head<3>() = vehicle.cartesian_state.position_m;
+    state.head<3>() = vehicle.cartesian.position_m;
     state[3] = v;
     state[4] = psi;
     state[5] = gamma;

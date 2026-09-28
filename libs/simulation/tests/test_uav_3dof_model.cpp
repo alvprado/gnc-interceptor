@@ -72,13 +72,13 @@ TEST_F(UAV3DofModelTest, ToVehicleStateMatchesPositionVelocityAndOrientation)
     auto const vehicle = model_.toVehicleState(make_state(10.0, 20.0, 30.0, v, psi, gamma),
                                                make_control(0.0, 0.0, bank));
 
-    EXPECT_TRUE(vehicle.cartesian_state.position_m.isApprox(Eigen::Vector3d{10.0, 20.0, 30.0}));
-    EXPECT_NEAR(vehicle.cartesian_state.velocity_mps.x(), v * std::cos(gamma) * std::cos(psi),
+    EXPECT_TRUE(vehicle.cartesian.position_m.isApprox(Eigen::Vector3d{10.0, 20.0, 30.0}));
+    EXPECT_NEAR(vehicle.cartesian.velocity_mps.x(), v * std::cos(gamma) * std::cos(psi),
                k_tol);
-    EXPECT_NEAR(vehicle.cartesian_state.velocity_mps.y(), v * std::cos(gamma) * std::sin(psi),
+    EXPECT_NEAR(vehicle.cartesian.velocity_mps.y(), v * std::cos(gamma) * std::sin(psi),
                k_tol);
-    EXPECT_NEAR(vehicle.cartesian_state.velocity_mps.z(), v * std::sin(gamma), k_tol);
-    EXPECT_TRUE(vehicle.orientation.isApprox(math::attitudeFromHeadingPitchBank(psi, gamma, bank)));
+    EXPECT_NEAR(vehicle.cartesian.velocity_mps.z(), v * std::sin(gamma), k_tol);
+    EXPECT_TRUE(vehicle.attitude.isApprox(math::attitudeFromHeadingPitchBank(psi, gamma, bank)));
 }
 
 TEST_F(UAV3DofModelTest, FromVehicleStateInvertsToVehicleStatePositionVelocity)
