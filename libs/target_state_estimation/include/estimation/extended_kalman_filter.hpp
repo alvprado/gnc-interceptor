@@ -35,24 +35,24 @@ enum class EKFStatus
 /// @brief Output of a state estimate query: the estimate plus the filter's health.
 struct EKFTargetStateEstimationOutput
 {
-    math::CartesianState
-        target_state_estimation;  ///< The (possibly extrapolated) target state estimate.
-    EKFStatus filter_status{EKFStatus::Valid};  ///< The filter's status as of this query.
+    math::CartesianState target_state_estimate;  ///< The target state estimate.
+    EKFStatus filter_status{EKFStatus::Valid};   ///< The filter's status as of this query.
 };
 
 /// @brief Configuration for EKFTargetStateEstimation.
 struct EKFTargetStateEstimationConfig
 {
-    double jerk_noise_var{1.0};  ///< Process noise variance on target jerk, in (m/s^3)^2.
+    /// Process noise variance on target jerk, in (m/s^3)^2.
+    double jerk_noise_var{10.0};
     /// Assumed measurement noise variance, [range, range_rate, azimuth, elevation].
-    MeasurementVec sensor_noise_var{1.0, 1.0, 1.0, 1.0};
-
+    /// Matches RadarModelConfig's defaults.
+    MeasurementVec sensor_noise_var{100.0, 4.0, 4.0e-6, 4.0e-6};
     /// Initial position error variance on track initiation, in m^2.
     double initial_position_var{1.0e4};
     /// Initial velocity error variance on track initiation, in (m/s)^2.
-    double initial_velocity_var{1.0e4};
+    double initial_velocity_var{4.0e4};
     /// Initial acceleration error variance on track initiation, in (m/s^2)^2.
-    double initial_acceleration_var{1.0e2};
+    double initial_acceleration_var{4.0e2};
 };
 
 /// @brief Extended Kalman filter estimating the target's Cartesian state from

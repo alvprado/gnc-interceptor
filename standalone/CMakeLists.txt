@@ -11,4 +11,5 @@ target_link_libraries(standalone
             gnc::sensor_model
             gnc::target_trajectory_generator
             gnc::math
+            gnc::target_state_estimation
             gnc_compile_options)

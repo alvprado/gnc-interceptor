@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""Plot a standalone run's CSV as three separate figures.
+"""Plot a standalone run's CSV as four separate figures.
 
 Reads the columns produced by standalone/csv_logger.hpp
-(time_s, tgt_{x,y,z,vx,vy,vz}_m(ps), int_{x,y,z,vx,vy,vz}_m(ps),
+(time_s, tgt_{x,y,z,vx,vy,vz,ax,ay,az}_m(ps)(2),
+est_{x,y,z,vx,vy,vz,ax,ay,az}_m(ps)(2), int_{x,y,z,vx,vy,vz}_m(ps),
 int_{heading,fpa,bank}_rad, meas_{timestamp_s,range_m,range_rate_mps,
 azimuth_rad,elevation_rad}, cmd_{thrust_n,load_factor,bank_angle_rad}) and
 renders:
 
 1. Trajectories: 3D view, top-down (bird's-eye) view and altitude vs time,
    side by side.
-2. Interceptor vehicle states (speed, heading, flight-path angle) and
+2. EKF performance: target ground truth vs estimate, for 3D/planar/altitude
+   position and velocity/acceleration magnitude.
+3. Interceptor vehicle states (speed, heading, flight-path angle) and
    commanded control inputs (thrust, load factor, bank angle).
-3. Radar measurements (range, range rate, azimuth, elevation).
+4. Radar measurements (range, range rate, azimuth, elevation).
 
 Usage:
     python3 plot_trajectory.py [csv_path] [-o output_stem] [--no-show]
@@ -27,6 +30,7 @@ import pandas as pd
 INTERCEPTOR_COLOR = "#1f77b4"
 TARGET_COLOR = "#d62728"
 MEASURED_COLOR = "#7f7f7f"
+ESTIMATE_ALPHA = 0.55  # estimate traces reuse their ground-truth color at this alpha
 
 
 def parse_args() -> argparse.Namespace:
@@ -60,13 +64,17 @@ def _point_coords(row: pd.Series, prefix: str, *, is_3d: bool) -> tuple:
     return tuple(coords)
 
 
-def _mark_start_end(ax, df: pd.DataFrame, *, is_3d: bool) -> None:
-    """Mark each trajectory's start (circle) and end (X) point."""
-    for prefix, color in (("int", INTERCEPTOR_COLOR), ("tgt", TARGET_COLOR)):
-        ax.scatter(*_point_coords(df.iloc[0], prefix, is_3d=is_3d), color=color, marker="o",
-                   s=40, zorder=5)
-        ax.scatter(*_point_coords(df.iloc[-1], prefix, is_3d=is_3d), color=color, marker="x",
-                   s=50, zorder=5)
+def _mark_start_end(ax, df: pd.DataFrame, series: list, *, is_3d: bool) -> None:
+    """Mark each series' start (circle) and end (X) point.
+
+    series is a list of (column_prefix, color, alpha) triples, e.g.
+    [("tgt", TARGET_COLOR, 1.0)].
+    """
+    for prefix, color, alpha in series:
+        ax.scatter(*_point_coords(df.iloc[0], prefix, is_3d=is_3d), color=color, alpha=alpha,
+                   marker="o", s=40, zorder=5)
+        ax.scatter(*_point_coords(df.iloc[-1], prefix, is_3d=is_3d), color=color, alpha=alpha,
+                   marker="x", s=50, zorder=5)
 
 
 def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
@@ -77,7 +85,8 @@ def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
     ax_3d.plot(df["int_x_m"], df["int_y_m"], df["int_z_m"], color=INTERCEPTOR_COLOR,
               label="Interceptor")
     ax_3d.plot(df["tgt_x_m"], df["tgt_y_m"], df["tgt_z_m"], color=TARGET_COLOR, label="Target")
-    _mark_start_end(ax_3d, df, is_3d=True)
+    _mark_start_end(ax_3d, df, [("int", INTERCEPTOR_COLOR, 1.0), ("tgt", TARGET_COLOR, 1.0)],
+                    is_3d=True)
     ax_3d.set_xlabel("x [m]")
     ax_3d.set_ylabel("y [m]")
     ax_3d.set_zlabel("z [m]")
@@ -87,7 +96,8 @@ def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
     ax_top = fig.add_subplot(1, 3, 2)
     ax_top.plot(df["int_x_m"], df["int_y_m"], color=INTERCEPTOR_COLOR, label="Interceptor")
     ax_top.plot(df["tgt_x_m"], df["tgt_y_m"], color=TARGET_COLOR, label="Target")
-    _mark_start_end(ax_top, df, is_3d=False)
+    _mark_start_end(ax_top, df, [("int", INTERCEPTOR_COLOR, 1.0), ("tgt", TARGET_COLOR, 1.0)],
+                    is_3d=False)
     ax_top.set_xlabel("x [m]")
     ax_top.set_ylabel("y [m]")
     ax_top.set_title("Top-down (bird's-eye) view")
@@ -105,6 +115,79 @@ def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
     ax_alt.legend()
 
     fig.suptitle("Target vs interceptor trajectory")
+    fig.tight_layout()
+    return fig
+
+
+def plot_ekf_performance(df: pd.DataFrame) -> plt.Figure:
+    """Target ground truth vs EKF estimate: position (3D, top-down, altitude)
+    and velocity/acceleration magnitude."""
+    fig = plt.figure(figsize=(15, 8))
+    series = [("tgt", TARGET_COLOR, 1.0), ("est", TARGET_COLOR, ESTIMATE_ALPHA)]
+
+    ax_3d = fig.add_subplot(2, 3, 1, projection="3d")
+    ax_3d.plot(df["tgt_x_m"], df["tgt_y_m"], df["tgt_z_m"], color=TARGET_COLOR,
+              label="Ground truth")
+    ax_3d.plot(df["est_x_m"], df["est_y_m"], df["est_z_m"], color=TARGET_COLOR,
+              alpha=ESTIMATE_ALPHA, label="EKF estimate")
+    _mark_start_end(ax_3d, df, series, is_3d=True)
+    ax_3d.set_xlabel("x [m]")
+    ax_3d.set_ylabel("y [m]")
+    ax_3d.set_zlabel("z [m]")
+    ax_3d.set_title("3D position")
+    ax_3d.legend()
+
+    ax_top = fig.add_subplot(2, 3, 2)
+    ax_top.plot(df["tgt_x_m"], df["tgt_y_m"], color=TARGET_COLOR, label="Ground truth")
+    ax_top.plot(df["est_x_m"], df["est_y_m"], color=TARGET_COLOR, alpha=ESTIMATE_ALPHA,
+               label="EKF estimate")
+    _mark_start_end(ax_top, df, series, is_3d=False)
+    ax_top.set_xlabel("x [m]")
+    ax_top.set_ylabel("y [m]")
+    ax_top.set_title("Planar (x-y) position")
+    ax_top.set_aspect("equal", adjustable="datalim")
+    ax_top.grid(True, alpha=0.3)
+    ax_top.legend()
+
+    ax_alt = fig.add_subplot(2, 3, 3)
+    ax_alt.plot(df["time_s"], df["tgt_z_m"], color=TARGET_COLOR, label="Ground truth")
+    ax_alt.plot(df["time_s"], df["est_z_m"], color=TARGET_COLOR, alpha=ESTIMATE_ALPHA,
+               label="EKF estimate")
+    ax_alt.set_xlabel("t [s]")
+    ax_alt.set_ylabel("z [m]")
+    ax_alt.set_title("Altitude vs time")
+    ax_alt.grid(True, alpha=0.3)
+    ax_alt.legend()
+
+    tgt_speed = np.sqrt(df["tgt_vx_mps"] ** 2 + df["tgt_vy_mps"] ** 2 + df["tgt_vz_mps"] ** 2)
+    est_speed = np.sqrt(df["est_vx_mps"] ** 2 + df["est_vy_mps"] ** 2 + df["est_vz_mps"] ** 2)
+
+    ax_speed = fig.add_subplot(2, 3, 4)
+    ax_speed.plot(df["time_s"], tgt_speed, color=TARGET_COLOR, label="Ground truth")
+    ax_speed.plot(df["time_s"], est_speed, color=TARGET_COLOR, alpha=ESTIMATE_ALPHA,
+                 label="EKF estimate")
+    ax_speed.set_xlabel("t [s]")
+    ax_speed.set_ylabel("speed [m/s]")
+    ax_speed.set_title("Velocity magnitude")
+    ax_speed.grid(True, alpha=0.3)
+    ax_speed.legend()
+
+    tgt_accel = np.sqrt(df["tgt_ax_mps2"] ** 2 + df["tgt_ay_mps2"] ** 2 + df["tgt_az_mps2"] ** 2)
+    est_accel = np.sqrt(df["est_ax_mps2"] ** 2 + df["est_ay_mps2"] ** 2 + df["est_az_mps2"] ** 2)
+
+    ax_accel = fig.add_subplot(2, 3, 5)
+    ax_accel.plot(df["time_s"], tgt_accel, color=TARGET_COLOR, label="Ground truth")
+    ax_accel.plot(df["time_s"], est_accel, color=TARGET_COLOR, alpha=ESTIMATE_ALPHA,
+                 label="EKF estimate")
+    ax_accel.set_xlabel("t [s]")
+    ax_accel.set_ylabel("accel [m/s^2]")
+    ax_accel.set_title("Acceleration magnitude")
+    ax_accel.grid(True, alpha=0.3)
+    ax_accel.legend()
+
+    fig.delaxes(fig.add_subplot(2, 3, 6))
+
+    fig.suptitle("Target ground truth vs EKF estimate")
     fig.tight_layout()
     return fig
 
@@ -213,6 +296,7 @@ def main() -> None:
     out_stem = Path(args.out) if args.out else csv_path.with_suffix("")
     figures = {
         "trajectories": plot_trajectories(df),
+        "ekf": plot_ekf_performance(df),
         "vehicle": plot_vehicle_and_controls(df),
         "measurements": plot_measurements(df),
     }

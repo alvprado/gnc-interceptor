@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "csv_logger.hpp"
+#include "estimation/extended_kalman_filter.hpp"
 #include "guidance/pn_controller.hpp"
 #include "guidance/predictive_guidance_controller.hpp"
 #include "math/angles.hpp"
@@ -82,6 +83,9 @@ int main()
     // Radar model
     sensor_model::RadarModel sensor{sensor_model::RadarModelConfig{}};
 
+    // EKF for target state estimation
+    estimation::EKFTargetStateEstimation ekf{estimation::EKFTargetStateEstimationConfig{}};
+
     constexpr double dt{0.01};
     constexpr double duration_s{100.0};
     constexpr int steps{static_cast<int>(duration_s / dt)};
@@ -96,12 +100,16 @@ int main()
     for (int i = 0; i <= steps; ++i)
     {
         auto const target_state = target_traj.evaluateTargetStateAt(t);
+        auto const measurement = sensor.step(target_state, state, math::Timestamp{t});
+        ekf.processMeasurement(measurement, state);
+        auto const estimation_output = ekf.stateEstimateAt(math::Timestamp{t});
+        auto const target_state_estimate = estimation_output.target_state_estimate;
         Eigen::Vector3d const control =
             use_predictive_guidance
-                ? predictive_controller.step(target_state, state.cartesian, dt)
-                : pn_controller.step(target_state, state.cartesian, dt);
-        auto const measurement = sensor.step(target_state, state, math::Timestamp{t});
-        samples.push_back(TrajectorySample{t, target_state, state, measurement, control});
+                ? predictive_controller.step(target_state_estimate, state.cartesian, dt)
+                : pn_controller.step(target_state_estimate, state.cartesian, dt);
+        samples.push_back(
+            TrajectorySample{t, target_state, target_state_estimate, state, measurement, control});
 
         if (i % 100 == 0)
         {
