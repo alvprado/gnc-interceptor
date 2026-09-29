@@ -8,8 +8,8 @@ int_{heading,fpa,bank}_rad, meas_{timestamp_s,range_m,range_rate_mps,
 azimuth_rad,elevation_rad}, cmd_{thrust_n,load_factor,bank_angle_rad}) and
 renders:
 
-1. Trajectories: 3D view, top-down (bird's-eye) view and altitude vs time,
-   side by side.
+1. Trajectories: a large 3D view above the top-down (bird's-eye) view and
+   altitude vs time.
 2. EKF performance: target ground truth vs estimate, for 3D/planar/altitude
    position and velocity/acceleration magnitude.
 3. Interceptor vehicle states (speed, heading, flight-path angle) and
@@ -79,10 +79,11 @@ def _mark_start_end(ax, df: pd.DataFrame, series: list, *, is_3d: bool) -> None:
 
 
 def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
-    """3D trajectory, top-down (bird's-eye) view and altitude vs time."""
-    fig = plt.figure(figsize=(3 * PANEL_WIDTH_IN, PANEL_HEIGHT_IN))
+    """Large 3D trajectory above top-down and altitude views."""
+    fig = plt.figure(figsize=(3 * PANEL_WIDTH_IN, 2.5 * PANEL_HEIGHT_IN))
+    grid = fig.add_gridspec(2, 2, height_ratios=(1.5, 1))
 
-    ax_3d = fig.add_subplot(1, 3, 1, projection="3d")
+    ax_3d = fig.add_subplot(grid[0, :], projection="3d")
     ax_3d.plot(df["int_x_m"], df["int_y_m"], df["int_z_m"], color=BLUE_COLOR,
               label="Interceptor")
     ax_3d.plot(df["tgt_x_m"], df["tgt_y_m"], df["tgt_z_m"], color=TARGET_COLOR, label="Target")
@@ -94,7 +95,7 @@ def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
     ax_3d.set_title("3D trajectory")
     ax_3d.legend()
 
-    ax_top = fig.add_subplot(1, 3, 2)
+    ax_top = fig.add_subplot(grid[1, 0])
     ax_top.plot(df["int_x_m"], df["int_y_m"], color=BLUE_COLOR, label="Interceptor")
     ax_top.plot(df["tgt_x_m"], df["tgt_y_m"], color=TARGET_COLOR, label="Target")
     _mark_start_end(ax_top, df, [("int", BLUE_COLOR, 1.0), ("tgt", TARGET_COLOR, 1.0)],
@@ -106,7 +107,7 @@ def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
     ax_top.grid(True, alpha=0.3)
     ax_top.legend()
 
-    ax_alt = fig.add_subplot(1, 3, 3)
+    ax_alt = fig.add_subplot(grid[1, 1])
     ax_alt.plot(df["time_s"], df["int_z_m"], color=BLUE_COLOR, label="Interceptor")
     ax_alt.plot(df["time_s"], df["tgt_z_m"], color=TARGET_COLOR, label="Target")
     ax_alt.set_xlabel("t [s]")

@@ -25,15 +25,13 @@ Out-of-scope for this project: full rigid-body 6DOF dynamics and low-level attit
 
 ## Example 
 
-The target performs a figure-eight maneuver in a tilted plane. The interceptor starts at the origin with an initial boost-phase and the iLQR-based predictive guidance is used to intercept the target, with target states estimated by the EKF from noisy radar measurements. The plots show the trajectories, estimation performance, interceptor states and controls, and radar measurements.
+The target performs a figure-eight maneuver in a tilted plane. The interceptor starts at the origin with an initial boost-phase and the iLQR-based predictive guidance is used to intercept the target, with target states estimated by the EKF from noisy radar measurements. The plots show the trajectories, estimation performance, and interceptor states and controls.
 
 <img src="docs/media/standalone_trajectories.png" width="750" alt="Target and interceptor trajectories in 3D, top-down view, and altitude over time">
 
 <img src="docs/media/standalone_ekf.png" width="750" alt="Target ground truth and EKF estimates of position, speed, and acceleration">
 
 <img src="docs/media/standalone_vehicle.png" width="750" alt="Interceptor speed, heading, flight-path angle, thrust, load factor, and bank angle">
-
-<img src="docs/media/standalone_measurements.png" width="500" alt="Radar range, range rate, azimuth, and elevation measurements">
 
 ## Build
 
