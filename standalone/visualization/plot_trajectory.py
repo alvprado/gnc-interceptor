@@ -27,10 +27,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-INTERCEPTOR_COLOR = "#1f77b4"
+BLUE_COLOR = "#1f77b4"
 TARGET_COLOR = "#d62728"
-MEASURED_COLOR = "#7f7f7f"
 ESTIMATE_ALPHA = 0.55  # estimate traces reuse their ground-truth color at this alpha
+PANEL_WIDTH_IN = 5
+PANEL_HEIGHT_IN = 4
 
 
 def parse_args() -> argparse.Namespace:
@@ -79,13 +80,13 @@ def _mark_start_end(ax, df: pd.DataFrame, series: list, *, is_3d: bool) -> None:
 
 def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
     """3D trajectory, top-down (bird's-eye) view and altitude vs time."""
-    fig = plt.figure(figsize=(15, 5))
+    fig = plt.figure(figsize=(3 * PANEL_WIDTH_IN, PANEL_HEIGHT_IN))
 
     ax_3d = fig.add_subplot(1, 3, 1, projection="3d")
-    ax_3d.plot(df["int_x_m"], df["int_y_m"], df["int_z_m"], color=INTERCEPTOR_COLOR,
+    ax_3d.plot(df["int_x_m"], df["int_y_m"], df["int_z_m"], color=BLUE_COLOR,
               label="Interceptor")
     ax_3d.plot(df["tgt_x_m"], df["tgt_y_m"], df["tgt_z_m"], color=TARGET_COLOR, label="Target")
-    _mark_start_end(ax_3d, df, [("int", INTERCEPTOR_COLOR, 1.0), ("tgt", TARGET_COLOR, 1.0)],
+    _mark_start_end(ax_3d, df, [("int", BLUE_COLOR, 1.0), ("tgt", TARGET_COLOR, 1.0)],
                     is_3d=True)
     ax_3d.set_xlabel("x [m]")
     ax_3d.set_ylabel("y [m]")
@@ -94,9 +95,9 @@ def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
     ax_3d.legend()
 
     ax_top = fig.add_subplot(1, 3, 2)
-    ax_top.plot(df["int_x_m"], df["int_y_m"], color=INTERCEPTOR_COLOR, label="Interceptor")
+    ax_top.plot(df["int_x_m"], df["int_y_m"], color=BLUE_COLOR, label="Interceptor")
     ax_top.plot(df["tgt_x_m"], df["tgt_y_m"], color=TARGET_COLOR, label="Target")
-    _mark_start_end(ax_top, df, [("int", INTERCEPTOR_COLOR, 1.0), ("tgt", TARGET_COLOR, 1.0)],
+    _mark_start_end(ax_top, df, [("int", BLUE_COLOR, 1.0), ("tgt", TARGET_COLOR, 1.0)],
                     is_3d=False)
     ax_top.set_xlabel("x [m]")
     ax_top.set_ylabel("y [m]")
@@ -106,7 +107,7 @@ def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
     ax_top.legend()
 
     ax_alt = fig.add_subplot(1, 3, 3)
-    ax_alt.plot(df["time_s"], df["int_z_m"], color=INTERCEPTOR_COLOR, label="Interceptor")
+    ax_alt.plot(df["time_s"], df["int_z_m"], color=BLUE_COLOR, label="Interceptor")
     ax_alt.plot(df["time_s"], df["tgt_z_m"], color=TARGET_COLOR, label="Target")
     ax_alt.set_xlabel("t [s]")
     ax_alt.set_ylabel("z [m]")
@@ -122,13 +123,13 @@ def plot_trajectories(df: pd.DataFrame) -> plt.Figure:
 def plot_ekf_performance(df: pd.DataFrame) -> plt.Figure:
     """Target ground truth vs EKF estimate: position (3D, top-down, altitude)
     and velocity/acceleration magnitude."""
-    fig = plt.figure(figsize=(15, 8))
-    series = [("tgt", TARGET_COLOR, 1.0), ("est", TARGET_COLOR, ESTIMATE_ALPHA)]
+    fig = plt.figure(figsize=(3 * PANEL_WIDTH_IN, 2 * PANEL_HEIGHT_IN))
+    series = [("tgt", BLUE_COLOR, 1.0), ("est", BLUE_COLOR, ESTIMATE_ALPHA)]
 
     ax_3d = fig.add_subplot(2, 3, 1, projection="3d")
-    ax_3d.plot(df["tgt_x_m"], df["tgt_y_m"], df["tgt_z_m"], color=TARGET_COLOR,
+    ax_3d.plot(df["tgt_x_m"], df["tgt_y_m"], df["tgt_z_m"], color=BLUE_COLOR,
               label="Ground truth")
-    ax_3d.plot(df["est_x_m"], df["est_y_m"], df["est_z_m"], color=TARGET_COLOR,
+    ax_3d.plot(df["est_x_m"], df["est_y_m"], df["est_z_m"], color=BLUE_COLOR,
               alpha=ESTIMATE_ALPHA, label="EKF estimate")
     _mark_start_end(ax_3d, df, series, is_3d=True)
     ax_3d.set_xlabel("x [m]")
@@ -138,8 +139,8 @@ def plot_ekf_performance(df: pd.DataFrame) -> plt.Figure:
     ax_3d.legend()
 
     ax_top = fig.add_subplot(2, 3, 2)
-    ax_top.plot(df["tgt_x_m"], df["tgt_y_m"], color=TARGET_COLOR, label="Ground truth")
-    ax_top.plot(df["est_x_m"], df["est_y_m"], color=TARGET_COLOR, alpha=ESTIMATE_ALPHA,
+    ax_top.plot(df["tgt_x_m"], df["tgt_y_m"], color=BLUE_COLOR, label="Ground truth")
+    ax_top.plot(df["est_x_m"], df["est_y_m"], color=BLUE_COLOR, alpha=ESTIMATE_ALPHA,
                label="EKF estimate")
     _mark_start_end(ax_top, df, series, is_3d=False)
     ax_top.set_xlabel("x [m]")
@@ -150,8 +151,8 @@ def plot_ekf_performance(df: pd.DataFrame) -> plt.Figure:
     ax_top.legend()
 
     ax_alt = fig.add_subplot(2, 3, 3)
-    ax_alt.plot(df["time_s"], df["tgt_z_m"], color=TARGET_COLOR, label="Ground truth")
-    ax_alt.plot(df["time_s"], df["est_z_m"], color=TARGET_COLOR, alpha=ESTIMATE_ALPHA,
+    ax_alt.plot(df["time_s"], df["tgt_z_m"], color=BLUE_COLOR, label="Ground truth")
+    ax_alt.plot(df["time_s"], df["est_z_m"], color=BLUE_COLOR, alpha=ESTIMATE_ALPHA,
                label="EKF estimate")
     ax_alt.set_xlabel("t [s]")
     ax_alt.set_ylabel("z [m]")
@@ -163,8 +164,8 @@ def plot_ekf_performance(df: pd.DataFrame) -> plt.Figure:
     est_speed = np.sqrt(df["est_vx_mps"] ** 2 + df["est_vy_mps"] ** 2 + df["est_vz_mps"] ** 2)
 
     ax_speed = fig.add_subplot(2, 3, 4)
-    ax_speed.plot(df["time_s"], tgt_speed, color=TARGET_COLOR, label="Ground truth")
-    ax_speed.plot(df["time_s"], est_speed, color=TARGET_COLOR, alpha=ESTIMATE_ALPHA,
+    ax_speed.plot(df["time_s"], tgt_speed, color=BLUE_COLOR, label="Ground truth")
+    ax_speed.plot(df["time_s"], est_speed, color=BLUE_COLOR, alpha=ESTIMATE_ALPHA,
                  label="EKF estimate")
     ax_speed.set_xlabel("t [s]")
     ax_speed.set_ylabel("speed [m/s]")
@@ -176,8 +177,8 @@ def plot_ekf_performance(df: pd.DataFrame) -> plt.Figure:
     est_accel = np.sqrt(df["est_ax_mps2"] ** 2 + df["est_ay_mps2"] ** 2 + df["est_az_mps2"] ** 2)
 
     ax_accel = fig.add_subplot(2, 3, 5)
-    ax_accel.plot(df["time_s"], tgt_accel, color=TARGET_COLOR, label="Ground truth")
-    ax_accel.plot(df["time_s"], est_accel, color=TARGET_COLOR, alpha=ESTIMATE_ALPHA,
+    ax_accel.plot(df["time_s"], tgt_accel, color=BLUE_COLOR, label="Ground truth")
+    ax_accel.plot(df["time_s"], est_accel, color=BLUE_COLOR, alpha=ESTIMATE_ALPHA,
                  label="EKF estimate")
     ax_accel.set_xlabel("t [s]")
     ax_accel.set_ylabel("accel [m/s^2]")
@@ -194,48 +195,48 @@ def plot_ekf_performance(df: pd.DataFrame) -> plt.Figure:
 
 def plot_vehicle_and_controls(df: pd.DataFrame) -> plt.Figure:
     """Interceptor vehicle states (top row) and commanded control inputs (bottom row)."""
-    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+    fig, axes = plt.subplots(2, 3, figsize=(3 * PANEL_WIDTH_IN, 2 * PANEL_HEIGHT_IN))
     speed_mps = np.sqrt(df["int_vx_mps"] ** 2 + df["int_vy_mps"] ** 2 + df["int_vz_mps"] ** 2)
 
     ax_speed = axes[0, 0]
-    ax_speed.plot(df["time_s"], speed_mps, color=INTERCEPTOR_COLOR)
+    ax_speed.plot(df["time_s"], speed_mps, color=BLUE_COLOR)
     ax_speed.set_xlabel("t [s]")
     ax_speed.set_ylabel("speed [m/s]")
     ax_speed.set_title("Speed")
     ax_speed.grid(True, alpha=0.3)
 
     ax_heading = axes[0, 1]
-    ax_heading.plot(df["time_s"], np.degrees(df["int_heading_rad"]), color=INTERCEPTOR_COLOR)
+    ax_heading.plot(df["time_s"], np.degrees(df["int_heading_rad"]), color=BLUE_COLOR)
     ax_heading.set_xlabel("t [s]")
     ax_heading.set_ylabel("heading [deg]")
     ax_heading.set_title("Heading")
     ax_heading.grid(True, alpha=0.3)
 
     ax_fpa = axes[0, 2]
-    ax_fpa.plot(df["time_s"], np.degrees(df["int_fpa_rad"]), color=INTERCEPTOR_COLOR)
+    ax_fpa.plot(df["time_s"], np.degrees(df["int_fpa_rad"]), color=BLUE_COLOR)
     ax_fpa.set_xlabel("t [s]")
     ax_fpa.set_ylabel("flight-path angle [deg]")
     ax_fpa.set_title("Flight-path angle")
     ax_fpa.grid(True, alpha=0.3)
 
     ax_thrust = axes[1, 0]
-    ax_thrust.plot(df["time_s"], df["cmd_thrust_n"], color=INTERCEPTOR_COLOR)
+    ax_thrust.plot(df["time_s"], df["cmd_thrust_n"], color=BLUE_COLOR)
     ax_thrust.set_xlabel("t [s]")
     ax_thrust.set_ylabel("thrust [N]")
     ax_thrust.set_title("Commanded thrust")
     ax_thrust.grid(True, alpha=0.3)
 
     ax_load_factor = axes[1, 1]
-    ax_load_factor.plot(df["time_s"], df["cmd_load_factor"], color=INTERCEPTOR_COLOR)
+    ax_load_factor.plot(df["time_s"], df["cmd_load_factor"], color=BLUE_COLOR)
     ax_load_factor.set_xlabel("t [s]")
     ax_load_factor.set_ylabel("load factor [g]")
     ax_load_factor.set_title("Commanded load factor")
     ax_load_factor.grid(True, alpha=0.3)
 
     ax_bank = axes[1, 2]
-    ax_bank.plot(df["time_s"], np.degrees(df["int_bank_rad"]), color=INTERCEPTOR_COLOR,
+    ax_bank.plot(df["time_s"], np.degrees(df["int_bank_rad"]), color=BLUE_COLOR,
                 label="Vehicle state")
-    ax_bank.plot(df["time_s"], np.degrees(df["cmd_bank_angle_rad"]), color=INTERCEPTOR_COLOR,
+    ax_bank.plot(df["time_s"], np.degrees(df["cmd_bank_angle_rad"]), color=BLUE_COLOR,
                 linestyle="--", alpha=0.6, label="Commanded")
     ax_bank.set_xlabel("t [s]")
     ax_bank.set_ylabel("bank angle [deg]")
@@ -250,31 +251,31 @@ def plot_vehicle_and_controls(df: pd.DataFrame) -> plt.Figure:
 
 def plot_measurements(df: pd.DataFrame) -> plt.Figure:
     """Radar measurements: range, range rate, azimuth, elevation."""
-    fig, axes = plt.subplots(2, 2, figsize=(11, 8))
+    fig, axes = plt.subplots(2, 2, figsize=(2 * PANEL_WIDTH_IN, 2 * PANEL_HEIGHT_IN))
 
     ax_range = axes[0, 0]
-    ax_range.plot(df["time_s"], df["meas_range_m"], color=MEASURED_COLOR)
+    ax_range.plot(df["time_s"], df["meas_range_m"], color=BLUE_COLOR)
     ax_range.set_xlabel("t [s]")
     ax_range.set_ylabel("range [m]")
     ax_range.set_title("Range")
     ax_range.grid(True, alpha=0.3)
 
     ax_range_rate = axes[0, 1]
-    ax_range_rate.plot(df["time_s"], df["meas_range_rate_mps"], color=MEASURED_COLOR)
+    ax_range_rate.plot(df["time_s"], df["meas_range_rate_mps"], color=BLUE_COLOR)
     ax_range_rate.set_xlabel("t [s]")
     ax_range_rate.set_ylabel("range rate [m/s]")
     ax_range_rate.set_title("Range rate")
     ax_range_rate.grid(True, alpha=0.3)
 
     ax_azimuth = axes[1, 0]
-    ax_azimuth.plot(df["time_s"], np.degrees(df["meas_azimuth_rad"]), color=MEASURED_COLOR)
+    ax_azimuth.plot(df["time_s"], np.degrees(df["meas_azimuth_rad"]), color=BLUE_COLOR)
     ax_azimuth.set_xlabel("t [s]")
     ax_azimuth.set_ylabel("azimuth [deg]")
     ax_azimuth.set_title("Azimuth")
     ax_azimuth.grid(True, alpha=0.3)
 
     ax_elevation = axes[1, 1]
-    ax_elevation.plot(df["time_s"], np.degrees(df["meas_elevation_rad"]), color=MEASURED_COLOR)
+    ax_elevation.plot(df["time_s"], np.degrees(df["meas_elevation_rad"]), color=BLUE_COLOR)
     ax_elevation.set_xlabel("t [s]")
     ax_elevation.set_ylabel("elevation [deg]")
     ax_elevation.set_title("Elevation")

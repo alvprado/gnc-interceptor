@@ -66,14 +66,14 @@ int main()
     ilqr_config.solver_config.max_iterations = 50;
     PredictiveGuidanceController predictive_controller{ilqr_config};
 
-    // Target: figure-eight
+    // Target: figure-eight in a tilted plane.
     target::FigureEight const target_traj{
         Eigen::Vector3d{3000.0, 500.0, 1500.0},  // center_m
-        1000.0,                                  // length_m (tip to tip along the long axis)
-        500.0,                                   // width_m (tip to tip across)
-        0.1,                                     // angular_rate_rps
-        Eigen::Vector3d{1.0, 0.0, 1.0},          // normal (flat, horizontal figure eight)
-        Eigen::Vector3d{0.0, -500.0, 0.0}};      // reference_direction (fixes the long axis)
+        1000.0,                                // length_m (tip to tip along the long axis)
+        500.0,                                 // width_m (tip to tip across)
+        0.1,                                   // angular_rate_rps
+        Eigen::Vector3d{1.0, 0.0, 1.0},        // normal
+        Eigen::Vector3d{0.0, -500.0, 0.0}};    // reference_direction (fixes the long axis)
 
     // Interceptor: at the origin, launched pointing at the target's initial
     // position.

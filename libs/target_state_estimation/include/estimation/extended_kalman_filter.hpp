@@ -45,7 +45,6 @@ struct EKFTargetStateEstimationConfig
     /// Process noise variance on target jerk, in (m/s^3)^2.
     double jerk_noise_var{10.0};
     /// Assumed measurement noise variance, [range, range_rate, azimuth, elevation].
-    /// Matches RadarModelConfig's defaults.
     MeasurementVec sensor_noise_var{100.0, 4.0, 4.0e-6, 4.0e-6};
     /// Initial position error variance on track initiation, in m^2.
     double initial_position_var{1.0e4};

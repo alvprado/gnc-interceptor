@@ -17,13 +17,23 @@ The code separates vehicle simulation, target trajectories, sensor modeling, sta
 | PN guidance | Proportional Navigation (PN) based acceleration commands, control allocation into load factor and bank angle, and a separate boost/trim thrust law. |
 | Predictive guidance | Receding-horizon iLQR optimization of load factor and bank angle, with bounded controls and an adaptive horizon. Thrust is handled separately using the same boost/trim approach as the PN controller. |
 | Sensor model | Simulates a body-fixed radar seeker sensor providing range, range-rate, azimuth, and elevation measurements with Gaussian noise. |
-| Target estimation | Nine-state EKF for position, velocity, and acceleration, using a constant-acceleration model with white-noise jerk. |
+| Target estimation | Nine-state Extended Kalman Filter (EKF) for position, velocity, and acceleration, using a constant-acceleration model with white-noise jerk. |
 
 The simulator's internal state is `[x, y, z, speed, heading, flight_path_angle]`; its control input is `[thrust, load_factor, bank_angle]`. The inertial frame is **right-handed with z pointing up**.
 
-The predictive controller (iLQR-based MPC) uses a similar model to the simulation but assumes constant speed (hence no speed dynamics) to be symmetric to the classic PN guidance stack. The model is augmented with the previous control input to be able to penalize control change instead of control magnitude.
-
 Out-of-scope for this project: full rigid-body 6DOF dynamics and low-level attitude control are outside its scope. Aerodynamic effects are neglected, only a simple drag model is used in simulation. The interceptor state is assumed to be perfectly known. Sensor model is unbiased.
+
+## Example 
+
+The target performs a figure-eight maneuver in a tilted plane. The interceptor starts at the origin with an initial boost-phase and the iLQR-based predictive guidance is used to intercept the target, with target states estimated by the EKF from noisy radar measurements. The plots show the trajectories, estimation performance, interceptor states and controls, and radar measurements.
+
+<img src="docs/media/standalone_trajectories.png" width="750" alt="Target and interceptor trajectories in 3D, top-down view, and altitude over time">
+
+<img src="docs/media/standalone_ekf.png" width="750" alt="Target ground truth and EKF estimates of position, speed, and acceleration">
+
+<img src="docs/media/standalone_vehicle.png" width="750" alt="Interceptor speed, heading, flight-path angle, thrust, load factor, and bank angle">
+
+<img src="docs/media/standalone_measurements.png" width="500" alt="Radar range, range rate, azimuth, and elevation measurements">
 
 ## Build
 
@@ -64,7 +74,7 @@ python3 standalone/visualization/plot_trajectory.py standalone/outputs/standalon
 ## Repository layout
 
 ```text
-docs/media/                       Architecture diagram
+docs/media/                       Architecture diagram and example plots
 libs/
   math/                           Shared states, angles, concepts, integrators
   simulation/                     Vehicle dynamics and templated simulator
@@ -79,5 +89,4 @@ standalone/
   main.cpp                        Simulation entry point and scenario settings
   csv_logger.hpp                  Run logging
   visualization/                  Python analysis tools
-  outputs/                        Generated CSV and plots (ignored by Git)
 ```
