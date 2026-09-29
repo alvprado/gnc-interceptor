@@ -4,3 +4,4 @@ compile_commands.json
 .cache/
 standalone/outputs/
 __pycache__/
+.DS_Store
