@@ -18,7 +18,7 @@ namespace guidance
 /// @brief Configuration for PredictiveGuidanceController.
 struct PredictiveGuidanceControllerConfig
 {
-    int horizon{100};    ///< Number of initial and maximal stages in the iLQR horizon.
+    int horizon{50};     ///< Number of initial and maximal stages in the iLQR horizon.
     int min_horizon{5};  ///< Lower bound on horizon length
     double dt{0.1};      ///< Integration/prediction timestep.
     double boost_phase_switch_speed_mps{90.0};  ///< Speed below which boost thrust is commanded.
@@ -28,8 +28,8 @@ struct PredictiveGuidanceControllerConfig
     double max_load_factor{9.0};                ///< Maximum load factor.
     double max_bank_angle_rad{std::numbers::pi};  ///< Maximum |bank angle| in rad.
     Dims::ControlVec control_effort_weight{
-        1.0 / (9.0 * 9.0),
-        1.0 / (std::numbers::pi *
+        2.0 / (9.0 * 9.0),
+        2.0 / (std::numbers::pi *
                std::numbers::pi)};           ///< Control rate weights (load factor and bank)
     double final_interception_weight{10.0};  ///< Weight on the final interception error
     double running_interception_weight{
