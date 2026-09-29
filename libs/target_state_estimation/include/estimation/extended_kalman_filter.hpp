@@ -26,16 +26,18 @@ using MeasurementJacobian = Eigen::Matrix<double, 4, 9>;
 /// @brief Health status of the EKF's latest update or query.
 enum class EKFStatus
 {
-    Valid,                          ///< The estimate is valid and up to date.
-    StaleTimestamp,                 ///< The queried/measurement timestamp is older than the filter's current time.
-    SingularInnovationCovariance,  ///< The innovation covariance couldn't be inverted; the last correction was skipped.
+    Valid,           ///< The estimate is valid and up to date.
+    StaleTimestamp,  ///< The queried/measurement timestamp is older than the filter's current time.
+    SingularInnovationCovariance,  ///< The innovation covariance couldn't be inverted; the last
+                                   ///< correction was skipped.
 };
 
 /// @brief Output of a state estimate query: the estimate plus the filter's health.
 struct EKFTargetStateEstimationOutput
 {
-    math::CartesianState target_state_estimation;  ///< The (possibly extrapolated) target state estimate.
-    EKFStatus filter_status{EKFStatus::Valid};      ///< The filter's status as of this query.
+    math::CartesianState
+        target_state_estimation;  ///< The (possibly extrapolated) target state estimate.
+    EKFStatus filter_status{EKFStatus::Valid};  ///< The filter's status as of this query.
 };
 
 /// @brief Configuration for EKFTargetStateEstimation.
@@ -64,11 +66,6 @@ public:
     explicit EKFTargetStateEstimation(EKFTargetStateEstimationConfig const& config);
 
     /// @brief Query the target state estimate at a given time.
-    /// @details A pure read: propagates a copy of the current estimate to
-    /// timestamp without modifying the filter's own state. If timestamp
-    /// predates the filter's current time, the estimate is returned
-    /// unpropagated with EKFStatus::StaleTimestamp; otherwise the status
-    /// reflects the filter's most recent predict/correct outcome.
     /// @param[in] timestamp The time to estimate the target state at.
     /// @returns The estimated target state at timestamp, plus the filter's status.
     [[nodiscard]] EKFTargetStateEstimationOutput stateEstimateAt(math::Timestamp timestamp) const;
@@ -88,9 +85,6 @@ public:
 
 private:
     /// @brief Initialize the track from the first measurement ever received.
-    /// @details Converts the spherical measurement to a Cartesian position,
-    /// leaves velocity/acceleration at zero, and sets a conservatively large
-    /// initial error covariance since nothing has been observed yet.
     /// @param[in] measurement The first radar measurement of the target.
     /// @param[in] interceptor_state The interceptor's ground-truth vehicle
     /// state at the time of the measurement.
@@ -149,8 +143,8 @@ private:
 
     double jerk_noise_var_;                 ///< Process noise variance on target jerk.
     MeasurementCov measurement_noise_cov_;  ///< Assumed measurement noise covariance (diagonal).
-    double initial_position_var_;           ///< Initial position error variance on track initiation.
-    double initial_velocity_var_;           ///< Initial velocity error variance on track initiation.
+    double initial_position_var_;      ///< Initial position error variance on track initiation.
+    double initial_velocity_var_;      ///< Initial velocity error variance on track initiation.
     double initial_acceleration_var_;  ///< Initial acceleration error variance on track initiation.
 
     bool initialized_{false};                    ///< Whether the track has been initialized.
