@@ -35,7 +35,7 @@ $$
 \end{bmatrix}.
 $$
 
-Here $\mathbf{I}_3$ is the three-dimensional identity matrix and $q_j$ is the continuous white-jerk spectral density, represented by `jerk_noise_var` in the configuration. Increasing $q_j$ allows faster changes in estimated acceleration at the expense of greater uncertainty.
+Here $\mathbf{I}_3$ is the three-dimensional identity matrix and $q_j$ is the continuous white-jerk spectral density. Increasing $q_j$ allows faster changes in estimated acceleration at the expense of greater uncertainty.
 
 The prediction step is
 
@@ -54,7 +54,7 @@ $$
 
 ## Measurement model
 
-The measurement is $\mathbf{z}_ {\mathrm{k}}=\left[ \rho_ {\mathrm{k}},\dot{\rho}_ {\mathrm{k}},\lambda_ {\mathrm{az},\mathrm{k}},\lambda_ {\mathrm{el},\mathrm{k}} \right]^{\top}$. Define $\mathbf{r}=\mathbf{p}_ {\mathrm{T}}-\mathbf{p}_ {\mathrm{I}}$, $\mathbf{v}_r=\mathbf{v}_ {\mathrm{T}}-\mathbf{v}_ {\mathrm{I}}$, and $\mathbf{r}_ {\mathrm{B}}=\mathbf{R}_ {\mathrm{WB}}^{\top}\mathbf{r}$, where $\mathbf{R}_ {\mathrm{WB}}$ maps body-frame vectors into the inertial frame. With $\rho=\|\mathbf{r}\|$ and $s=\sqrt{r_ {\mathrm{B},x}^2+r_ {\mathrm{B},y}^2}$, the observation model is
+The measurement is $\mathbf{z}_ {\mathrm{k}} = \left[ \rho_ {\mathrm{k}}, \dot{\rho}_ {\mathrm{k}}, \lambda_ {\mathrm{az},\mathrm{k}}, \lambda_ {\mathrm{el},\mathrm{k}} \right]^{\top}$. Define $\mathbf{r}=\mathbf{p}_ {\mathrm{T}}-\mathbf{p}_ {\mathrm{I}}$, $\mathbf{v}_ r=\mathbf{v}_ {\mathrm{T}}-\mathbf{v}_ {\mathrm{I}}$, and $\mathbf{r}_ {\mathrm{B}}=\mathbf{R}_ {\mathrm{WB}}^{\top}\mathbf{r}$, where $\mathbf{R}_ {\mathrm{WB}}$ maps body-frame vectors into the inertial frame. With $\rho=\|\mathbf{r}\|$ and $s=\sqrt{r_ {\mathrm{B},x}^2+r_ {\mathrm{B},y}^2}$, the observation model is
 
 $$
 \mathbf{z}_ {\mathrm{k}}=\mathbf{h}(\mathbf{x}_ {\mathrm{k}})+\boldsymbol{\nu}_ {\mathrm{k}},
@@ -143,8 +143,6 @@ $$
 \mathbf{P}_ {\mathrm{k}|\mathrm{k}}
 =(\mathbf{I}_9-\mathbf{K}_ {\mathrm{k}}\mathbf{H}_ {\mathrm{k}})\mathbf{P}_ {\mathrm{k}|\mathrm{k}-1}.
 $$
-
-The implementation uses an LDLT factorization of $\mathbf{S}_ {\mathrm{k}}$ and skips correction if the factorization reports failure. It uses the covariance update above rather than the Joseph form. Angular innovations are currently subtracted directly without wrapping, so azimuth measurements crossing the principal-angle boundary can produce an artificially large residual.
 
 ## Initialization 
 
