@@ -4,7 +4,7 @@ The sensor model represents a radar fixed to the interceptor's body frame. It re
 
 ## Measurement geometry
 
-Define the relative position $\mathbf{r}=\mathbf{p}_ {\mathrm{T}}-\mathbf{p}_ {\mathrm{I}}$ and velocity $\mathbf{v}_r=\mathbf{v}_ {\mathrm{T}}-\mathbf{v}_ {\mathrm{I}}$ in the inertial frame. Range and range rate are
+Define the relative position $\mathbf{r}=\mathbf{p}_ {\mathrm{T}}-\mathbf{p}_ {\mathrm{I}}$ and velocity $\mathbf{v}_ r=\mathbf{v}_ {\mathrm{T}}-\mathbf{v}_ {\mathrm{I}}$ in the inertial frame. Range and range rate are
 
 $$
 \rho=\|\mathbf{r}\|,
