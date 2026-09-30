@@ -150,7 +150,7 @@ $$
 
 ### Objective and constraints
 
-For $N$ control stages, define the position error $\mathbf{e}_ {\mathrm{k}} = \mathbf{p}_ {\mathrm{I},\mathrm{k}}-\widehat{\mathbf{p}}_ {\mathrm{T},\mathrm{k}}$ and the control change $\Delta\mathbf{u}_ {\mathrm{k}}=\mathbf{u}_ {\mathrm{k}}-\mathbf{u}_ {\mathrm{k}-1}$. With terminal position error $\mathbf{e}_N$, the optimization problem is
+For $N$ control stages, define the position error $\mathbf{e}_ {\mathrm{k}} = \mathbf{p}_ {\mathrm{T},\mathrm{k}}-\widehat{\mathbf{p}}_ {\mathrm{I},\mathrm{k}}$ and the control change $\Delta\mathbf{u}_ {\mathrm{k}}=\mathbf{u}_ {\mathrm{k}}-\mathbf{u}_ {\mathrm{k}-1}$. With terminal position error $\mathbf{e}_N$, the optimization problem is
 
 $$
 \begin{aligned}
