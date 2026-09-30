@@ -12,12 +12,12 @@ The code separates vehicle simulation, target trajectories, sensor modeling, sta
 
 | Component | Implementation |
 | --- | --- |
-| Simulation | 3DOF point-mass dynamics actuated with thrust, load factor and bank commands considering state and control limits. The standalone example uses RK4 integration. |
-| Target Trajectory Generator | Deterministic constant-velocity, circular, figure-eight, and helical trajectories, including position, velocity, and acceleration. |
-| PN guidance | Proportional Navigation (PN) based acceleration commands, control allocation into load factor and bank angle, and a separate boost/trim thrust law. |
-| Predictive guidance | Receding-horizon iLQR optimization of load factor and bank angle, with bounded controls and an adaptive horizon. Thrust is handled separately using the same boost/trim approach as the PN controller. |
-| Sensor model | Simulates a body-fixed radar seeker sensor providing range, range-rate, azimuth, and elevation measurements with Gaussian noise. |
-| Target estimation | Nine-state Extended Kalman Filter (EKF) for position, velocity, and acceleration, using a constant-acceleration model with white-noise jerk. |
+| [Simulation](docs/simulation.md) | 3DOF point-mass dynamics actuated with thrust, load factor and bank commands considering state and control limits. The standalone example uses RK4 integration. |
+| [Target Trajectory Generator](docs/target_trajectory_generator.md) | Deterministic constant-velocity, circular, figure-eight, and helical trajectories, including position, velocity, and acceleration. |
+| [PN guidance](docs/guidance.md) | Proportional Navigation (PN) based acceleration commands, control allocation into load factor and bank angle, and a separate boost/trim thrust law. |
+| [Predictive guidance](docs/guidance.md) | Receding-horizon iLQR optimization of load factor and bank angle, with bounded controls and an adaptive horizon. Thrust is handled separately using the same boost/trim approach as the PN controller. |
+| [Sensor model](docs/sensor_modeling.md) | Simulates a body-fixed radar seeker sensor providing range, range-rate, azimuth, and elevation measurements with Gaussian noise. |
+| [Target estimation](docs/target_state_estimation.md) | Nine-state Extended Kalman Filter (EKF) for position, velocity, and acceleration, using a constant-acceleration model with white-noise jerk. |
 
 The simulator's internal state is `[x, y, z, speed, heading, flight_path_angle]`; its control input is `[thrust, load_factor, bank_angle]`. The inertial frame is **right-handed with z pointing up**.
 
