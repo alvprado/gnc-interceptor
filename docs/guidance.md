@@ -95,7 +95,7 @@ Inverting these relations gives the unsaturated commands
 $$
 n=\frac{\sqrt{a_{\psi}^{2}+(a_{\gamma}+g\cos\gamma)^2}}{g},
 \qquad
-\alpha=\arctan2
+\alpha=\text{atan2}
 \left(a_{\psi},\,a_{\gamma}+g\cos\gamma\right).
 $$
 

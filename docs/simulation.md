@@ -4,21 +4,21 @@ The interceptor is simulated as a three-degree-of-freedom point mass in a right-
 
 ## Continuous dynamics
 
-The state is $\mathbf{x}(t)=[p_x(t),p_y(t),p_z(t),v(t),\psi(t),\gamma(t)]^{\top}$ and the control is $\mathbf{u}(t)=[T(t),n(t),\alpha(t)]^{\top}$. Here $v$ is speed, $\psi$ is heading from inertial $+x$ toward $+y$, and $\gamma$ is flight-path angle, positive during climb. The inputs are thrust $T$, load factor $n=L/(mg)$, and bank angle $\alpha$.
+The state is $\mathbf{x}(t)=\left[ p_x(t),p_y(t),p_z(t),v(t),\psi(t),\gamma(t) \right]^{\top}$ and the control is $\mathbf{u}(t)=\left[ T(t),n(t),\alpha(t) \right]^{\top}$. Here $v$ is speed, $\psi$ is heading from inertial $+x$ toward $+y$, and $\gamma$ is flight-path angle, positive during climb. The inputs are thrust $T$, load factor $n=L/(mg)$, and bank angle $\alpha$.
 
 $$
 \dot{\mathbf{x}}(t)=\mathbf{f}(\mathbf{x}(t),\mathbf{u}(t))=
 \begin{bmatrix}
-v\cos\gamma\cos\psi\\
-v\cos\gamma\sin\psi\\
-v\sin\gamma\\
-\dfrac{T-D(v)}{m}-g\sin\gamma\\
-\dfrac{ng\sin\alpha}{v\cos\gamma}\\
+v\cos\gamma\cos\psi \\
+v\cos\gamma\sin\psi \\
+v\sin\gamma \\
+\dfrac{T-D(v)}{m}-g\sin\gamma \\
+\dfrac{ng\sin\alpha}{v\cos\gamma} \\
 \dfrac{g(n\cos\alpha-\cos\gamma)}{v}
 \end{bmatrix}.
 $$
 
-Drag is modeled as $D(v)=\tfrac{1}{2}\rho_{\mathrm{air}}AC_Dv^2$, with constant mass $m$, air density $\rho_{\mathrm{air}}$, reference area $A$, and drag coefficient $C_D$. 
+Drag is modeled as $D(v)=\tfrac{1}{2}\rho_ {\mathrm{air}}AC_Dv^2$, with constant mass $m$, air density $\rho_ {\mathrm{air}}$, reference area $A$, and drag coefficient $C_D$.
 
 ## Discretization and limits
 
@@ -29,10 +29,10 @@ The standalone simulation uses fourth-order Runge–Kutta integration, with the 
 The simulator exposes position and velocity in the inertial frame to the other components. Velocity is reconstructed from speed and direction as
 
 $$
-\mathbf{v}_{\mathrm{I}}=
+\mathbf{v}_ {\mathrm{I}}=
 v\begin{bmatrix}
-\cos\gamma\cos\psi\\
-\cos\gamma\sin\psi\\
+\cos\gamma\cos\psi \\
+\cos\gamma\sin\psi \\
 \sin\gamma
 \end{bmatrix}.
 $$
@@ -40,7 +40,7 @@ $$
 Body attitude is derived from heading, flight-path angle, and the applied bank command, assuming zero sideslip and angle of attack. The body-to-inertial rotation is
 
 $$
-\mathbf{R}_{\mathrm{WB}}
+\mathbf{R}_ {\mathrm{WB}}
 =\mathbf{R}_z(\psi)\mathbf{R}_y(-\gamma)\mathbf{R}_x(\alpha).
 $$
 
