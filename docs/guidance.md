@@ -14,12 +14,11 @@ where $T$ is thrust, $n$ is load factor, and $\alpha$ is bank angle. Positions, 
 During boost, the controller commands fixed thrust with $n=1$ and $\alpha=0$ until the speed reaches the threshold $v_{\mathrm{thr}}$. The thrust command is
 
 $$
-T=
-\begin{cases}
-T_{\max}, & v<v_{\mathrm{thr}}, \\
-T_{\mathrm{trim}}, & v\ge v_{\mathrm{thr}}.
+T = \begin{cases} T_ {\max}, & v < v_ {\mathrm{thr}} \\
+T_ {\mathrm{trim}}, & v \geq v_ {\mathrm{thr}}  \\
 \end{cases}
 $$
+
 
 Here $T_{\max}$ denotes the configured boost thrust and $T_{\mathrm{trim}}$ the trim thrust that compensates drag $D(v)=\frac{1}{2}\rho_{\mathrm{air}} A C_D v^2$ and the component of gravity along the velocity:
 
@@ -32,9 +31,9 @@ $$
 Proportional navigation commands a transverse acceleration from the line-of-sight (LOS) rotation and closing speed. Define relative position, relative velocity, and range as
 
 $$
-\mathbf{r}=\mathbf{p}_{\mathrm{T}}-\mathbf{p}_{\mathrm{I}},
+\mathbf{r}=\mathbf{p}_ {\mathrm{T}}-\mathbf{p}_ {\mathrm{I}},
 \qquad
-\mathbf{v}_{r}=\mathbf{v}_{\mathrm{T}}-\mathbf{v}_{\mathrm{I}},
+\mathbf{v}_ {r}=\mathbf{v}_{\mathrm{T}}-\mathbf{v}_{\mathrm{I}},
 \qquad
 \rho=\|\mathbf{r}\|.
 $$
@@ -42,19 +41,19 @@ $$
 The closing speed and LOS angular velocity are
 
 $$
-V_c=-\dot{\rho}=-\frac{\mathbf{r}^{\top}\mathbf{v}_{r}}{\rho},
+V_c=-\dot{\rho}=-\frac{\mathbf{r}^{\top}\mathbf{v}_ {r}}{\rho},
 \qquad
-\boldsymbol{\omega}_{\mathrm{LOS}}
+\boldsymbol{\omega}_ {\mathrm{LOS}}
 =\frac{\mathbf{r}\times\mathbf{v}_{r}}{\rho^2}.
 $$
 
 The implemented three-dimensional PN law is
 
 $$
-\mathbf{a}_{\mathrm{PN}}
+\mathbf{a}_ {\mathrm{PN}}
 =N_{\mathrm{PN}}V_c
-\left(\boldsymbol{\omega}_{\mathrm{LOS}}\times
-\frac{\mathbf{v}_{\mathrm{I}}}{v}\right),
+\left(\boldsymbol{\omega}_ {\mathrm{LOS}}\times
+\frac{\mathbf{v}_ {\mathrm{I}}}{v}\right),
 $$
 
 where $N_{\mathrm{PN}}$ is the navigation gain. The command is perpendicular to the interceptor velocity and steers its direction. A constant LOS direction gives zero PN acceleration. Small positive floors on range and speed protect the implementation against division by zero.
@@ -64,19 +63,23 @@ where $N_{\mathrm{PN}}$ is the navigation gain. The command is perpendicular to 
 The simulator accepts load factor and bank angle rather than an inertial acceleration. Resolve the PN command along the transverse directions associated with increasing heading and flight-path angle:
 
 $$
-\mathbf{e}_{\psi}=
-\begin{bmatrix}-\sin\psi\\\cos\psi\\0\end{bmatrix},
-\qquad
-\mathbf{e}_{\gamma}=
+\mathbf{e}_ {\psi}=
 \begin{bmatrix}
--\sin\gamma\cos\psi\\
--\sin\gamma\sin\psi\\
+-\sin\psi \\
+\cos\psi \\
+0
+\end{bmatrix},
+\qquad
+\mathbf{e}_ {\gamma}=
+\begin{bmatrix}
+-\sin\gamma\cos\psi \\
+-\sin\gamma\sin\psi \\
 \cos\gamma
 \end{bmatrix},
 \qquad
-a_{\psi}=\mathbf{e}_{\psi}^{\top}\mathbf{a}_{\mathrm{PN}},
+a_{\psi}=\mathbf{e}_ {\psi}^{\top}\mathbf{a}_ {\mathrm{PN}},
 \quad
-a_{\gamma}=\mathbf{e}_{\gamma}^{\top}\mathbf{a}_{\mathrm{PN}}.
+a_{\gamma}=\mathbf{e}_ {\gamma}^{\top}\mathbf{a}_{\mathrm{PN}}.
 $$
 
 The transverse dynamics satisfy
@@ -92,7 +95,7 @@ Inverting these relations gives the unsaturated commands
 $$
 n=\frac{\sqrt{a_{\psi}^{2}+(a_{\gamma}+g\cos\gamma)^2}}{g},
 \qquad
-\alpha=\operatorname{atan2}
+\alpha=\arctan2
 \left(a_{\psi},\,a_{\gamma}+g\cos\gamma\right).
 $$
 
@@ -118,21 +121,21 @@ $$
 Speed and $\cos\gamma$ denominators are regularized near their singularities. The system is discretized using Heun's method; forward Euler and fourth-order Runge–Kutta are also available as integration policies. With prediction timestep $h$, configured separately from the simulation timestep, the discrete dynamics are
 
 $$
-\mathbf{x}_{\mathrm{k}+1}=\Phi_h(\mathbf{x}_{\mathrm{k}},\mathbf{u}_{\mathrm{k}}).
+\mathbf{x}_ {\mathrm{k}+1}=\Phi_h(\mathbf{x}_ {\mathrm{k}},\mathbf{u}_{\mathrm{k}}).
 $$
 
-To penalize control changes, define the augmented state $\widetilde{\mathbf{x}}_{\mathrm{k}}=[\mathbf{x}_{\mathrm{k}}^{\top},\mathbf{u}_{\mathrm{k}-1}^{\top}]^{\top}$, which includes the previous command. Its transition is
+To penalize control changes, define the augmented state $\widetilde{\mathbf{x}}_ {\mathrm{k}}=\[ \mathbf{x}_ {\mathrm{k}}^{\top},\mathbf{u}_ {\mathrm{k}-1}^{\top} \]^{\top}$, which includes the previous command. Its transition is
 
 $$
-\widetilde{\mathbf{x}}_{\mathrm{k}+1}=
-\widetilde{\Phi}_h(\widetilde{\mathbf{x}}_{\mathrm{k}},\mathbf{u}_{\mathrm{k}})=
+\widetilde{\mathbf{x}}_ {\mathrm{k}+1}=
+\widetilde{\Phi}_ h(\widetilde{\mathbf{x}}_ {\mathrm{k}},\mathbf{u}_ {\mathrm{k}})=
 \begin{bmatrix}
-\Phi_h(\mathbf{x}_{\mathrm{k}},\mathbf{u}_{\mathrm{k}})\\
+\Phi_h(\mathbf{x}_ {\mathrm{k}},\mathbf{u}_ {\mathrm{k}})\\
 \mathbf{u}_{\mathrm{k}}
 \end{bmatrix}.
 $$
 
-The dynamics Jacobians required by iLQR, $\mathbf{A}_{\mathrm{k}}=\partial\widetilde{\Phi}_h/\partial\widetilde{\mathbf{x}}_{\mathrm{k}}$ and $\mathbf{B}_{\mathrm{k}}=\partial\widetilde{\Phi}_h/\partial\mathbf{u}_{\mathrm{k}}$, are efficiently evaluated along the nominal trajectory using automatic differentiation, yielding derivatives accurate to floating-point precision.
+The dynamics Jacobians required by iLQR, $\mathbf{A}_ {\mathrm{k}}=\partial\widetilde{\Phi}_ h/\partial\widetilde{\mathbf{x}}_ {\mathrm{k}}$ and $\mathbf{B}_ {\mathrm{k}}=\partial\widetilde{\Phi}_ h/\partial\mathbf{u}_{\mathrm{k}}$, are efficiently evaluated along the nominal trajectory using automatic differentiation, yielding derivatives accurate to floating-point precision.
 
 ### Target prediction
 
@@ -147,7 +150,7 @@ $$
 
 ### Objective and constraints
 
-For $N$ control stages, define the position error $\mathbf{e}_{\mathrm{k}}=\mathbf{p}_{\mathrm{I},\mathrm{k}}-\widehat{\mathbf{p}}_{\mathrm{T},\mathrm{k}}$ and the control change $\Delta\mathbf{u}_{\mathrm{k}}=\mathbf{u}_{\mathrm{k}}-\mathbf{u}_{\mathrm{k}-1}$. With terminal position error $\mathbf{e}_N$, the optimization problem is
+For $N$ control stages, define the position error $\mathbf{e}_ {\mathrm{k}} = \mathbf{p}_ {\mathrm{I},\mathrm{k}}-\widehat{\mathbf{p}}_ {\mathrm{T},\mathrm{k}}$ and the control change $\Delta\mathbf{u}_ {\mathrm{k}}=\mathbf{u}_ {\mathrm{k}}-\mathbf{u}_ {\mathrm{k}-1}$. With terminal position error $\mathbf{e}_N$, the optimization problem is
 
 $$
 \begin{aligned}
@@ -159,15 +162,15 @@ w_r\|\mathbf{e}_{\mathrm{k}}\|^2
 +\Delta\mathbf{u}_{\mathrm{k}}^{\top}
 \mathbf{W}_{\Delta u}\Delta\mathbf{u}_{\mathrm{k}}
 \right] \\
-\text{subject to}\quad
+\text{s.t.}\quad
 \widetilde{\mathbf{x}}_{\mathrm{k}+1}
 &=\widetilde{\Phi}_h(\widetilde{\mathbf{x}}_{\mathrm{k}},\mathbf{u}_{\mathrm{k}}), \\
-n_{\min}&\le n_{\mathrm{k}}\le n_{\max}, \\
--\alpha_{\max}&\le\alpha_{\mathrm{k}}\le\alpha_{\max}.
+n_{\min} \le n_{\mathrm{k}} & \le n_{\max}, \\
+-\alpha_{\max} \le \alpha_{\mathrm{k}} & \le\alpha_{\max}.
 \end{aligned}
 $$
 
-with scaled weights $w_f$, $w_r$ and $\mathbf{W}_{\Delta u}=\operatorname{diag}(w_n,w_\alpha)$.
+with scaled weights $w_f$, $w_r$ and $\mathbf{W}_ {\Delta u}=\text{diag}(w_n,w_\alpha)$.
 
 The running and terminal position penalties encourage interception, while the control-change penalty discourages abrupt commands.
 
@@ -186,6 +189,6 @@ $$
 The horizon length is then
 
 $$
-N=\operatorname{clip}
-\left(\left\lceil\frac{\tau}{h}\right\rceil+1,\,N_{\min},\,N_{\max}\right).
+N=\text{clip}
+\left(\left\lceil\frac{\tau}{h}\right\rceil+1, N_{\min}, N_{\max}\right).
 $$
