@@ -1,6 +1,6 @@
 # Target Trajectory Generator
 
-The trajectory generator provides deterministic target position, velocity, and acceleration in the right-handed, z-up inertial frame. Each maneuver is evaluated analytically at the requested time through `evaluateTargetStateAt(t)`, without numerical integration or dependence on previous calls.
+The trajectory generator provides deterministic target position, velocity, and acceleration in the right-handed, z-up inertial frame. Each maneuver is evaluated analytically at the requested time.
 
 ## Maneuver plane
 
@@ -87,7 +87,7 @@ The target starts at the center and completes a full figure eight in $2\pi/|\ome
 
 ## Helical maneuver
 
-A helix combines a circular turn with uniform motion along $\mathbf{e}_3$. Given total speed $v$ and climb angle $\gamma$, the in-plane speed is $v_ {\perp}=v\cos\gamma$ and axial speed is $v_ {\parallel}=v\sin\gamma$. Use the circular displacement above with radius $r_c=v_ {\perp}^2/(|n|g)$ and angular rate $\omega=ng/v_ {\perp}$:
+A helix combines a circular turn with uniform motion along $\mathbf{e}_ 3$. Given total speed $v$ and climb angle $\gamma$, the in-plane speed is $v_ {\perp}=v\cos\gamma$ and axial speed is $v_ {\parallel}=v\sin\gamma$. Use the circular displacement above with radius $r_c=v_ {\perp}^2/(|n|g)$ and angular rate $\omega=ng/v_ {\perp}$:
 
 $$
 \mathbf{p}_ {\mathrm{T}}(t)
