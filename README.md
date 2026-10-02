@@ -8,6 +8,8 @@ The code separates vehicle simulation, target trajectories, sensor modeling, sta
 
 ![GNC architecture: target trajectory through sensor modeling, EKF estimation, and guidance to the interceptor simulator, with interceptor state feedback.](docs/media/gnc_architecture_diagram.svg)
 
+A detailed description of each component is to be found in the [docs](docs/).
+
 ## Components
 
 | Component | Implementation |
