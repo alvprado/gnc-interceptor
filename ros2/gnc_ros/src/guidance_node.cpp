@@ -9,9 +9,10 @@ namespace gnc_ros
 GuidanceNode::GuidanceNode(rclcpp::NodeOptions const& options) : Node("guidance_node", options)
 {
     auto const qos = rclcpp::QoS{10};
-    vehicle_subscription_ = create_subscription<gnc_interfaces::msg::VehicleState>(
-        "vehicle/state", qos, [this](gnc_interfaces::msg::VehicleState::ConstSharedPtr state)
-        { latest_vehicle_state_ = std::move(state); });
+    interceptor_subscription_ = create_subscription<gnc_interfaces::msg::InterceptorState>(
+        "interceptor/state", qos,
+        [this](gnc_interfaces::msg::InterceptorState::ConstSharedPtr state)
+        { latest_interceptor_state_ = std::move(state); });
     estimate_subscription_ = create_subscription<gnc_interfaces::msg::TargetEstimate>(
         "target/estimate", qos, [this](gnc_interfaces::msg::TargetEstimate::ConstSharedPtr estimate)
         { latest_estimate_ = std::move(estimate); });

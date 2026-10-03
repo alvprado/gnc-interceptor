@@ -10,7 +10,8 @@ SimulationNode::SimulationNode(rclcpp::NodeOptions const& options)
     : Node("simulation_node", options)
 {
     auto const qos = rclcpp::QoS{10};
-    vehicle_publisher_ = create_publisher<gnc_interfaces::msg::VehicleState>("vehicle/state", qos);
+    interceptor_publisher_ =
+        create_publisher<gnc_interfaces::msg::InterceptorState>("interceptor/state", qos);
     target_publisher_ =
         create_publisher<gnc_interfaces::msg::TargetState>("target/ground_truth", qos);
     radar_publisher_ =

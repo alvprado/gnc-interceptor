@@ -7,7 +7,7 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-    "msg/VehicleState.msg"
+    "msg/InterceptorState.msg"
     "msg/TargetState.msg"
     "msg/RadarMeasurement.msg"
     "msg/TargetEstimate.msg"

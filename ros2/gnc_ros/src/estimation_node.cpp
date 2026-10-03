@@ -10,9 +10,10 @@ EstimationNode::EstimationNode(rclcpp::NodeOptions const& options)
     : Node("estimation_node", options)
 {
     auto const qos = rclcpp::QoS{10};
-    vehicle_subscription_ = create_subscription<gnc_interfaces::msg::VehicleState>(
-        "vehicle/state", qos, [this](gnc_interfaces::msg::VehicleState::ConstSharedPtr state)
-        { latest_vehicle_state_ = std::move(state); });
+    interceptor_subscription_ = create_subscription<gnc_interfaces::msg::InterceptorState>(
+        "interceptor/state", qos,
+        [this](gnc_interfaces::msg::InterceptorState::ConstSharedPtr state)
+        { latest_interceptor_state_ = std::move(state); });
     radar_subscription_ = create_subscription<gnc_interfaces::msg::RadarMeasurement>(
         "radar/measurement", qos,
         [this](gnc_interfaces::msg::RadarMeasurement::ConstSharedPtr measurement)
@@ -20,7 +21,7 @@ EstimationNode::EstimationNode(rclcpp::NodeOptions const& options)
     estimate_publisher_ =
         create_publisher<gnc_interfaces::msg::TargetEstimate>("target/estimate", qos);
 
-    // TODO: Match vehicle state to measurement time before calling the EKF.
+    // TODO: Match interceptor state to measurement time before calling the EKF.
     RCLCPP_INFO(get_logger(), "Estimation skeleton ready; the EKF is not connected yet.");
 }
 
