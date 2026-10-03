@@ -1,16 +1,17 @@
-#include "simulation/target_configuration.hpp"
+#include "simulation/target_config.hpp"
 
-#include <rcl_interfaces/msg/parameter_descriptor.hpp>
-#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
+
+#include "common/parameter_utils.hpp"
 
 namespace gnc_ros
 {
 namespace
 {
+
+constexpr auto prefix = "target";
 
 [[nodiscard]] TargetType targetTypeFromString(std::string_view name)
 {
@@ -18,22 +19,6 @@ namespace
     if (name == "circle") return TargetType::Circle;
     if (name == "helix") return TargetType::Helix;
     return TargetType::FigureEight;
-}
-
-template <typename T>
-[[nodiscard]] T readParameter(rclcpp::Node& node, std::string const& name, T const& default_value)
-{
-    rcl_interfaces::msg::ParameterDescriptor descriptor;
-    descriptor.read_only = true;
-    return node.declare_parameter<T>("target." + name, default_value, descriptor);
-}
-
-[[nodiscard]] Eigen::Vector3d readVector(rclcpp::Node& node, std::string const& name,
-                                         Eigen::Vector3d const& default_value)
-{
-    auto const values = readParameter(
-        node, name, std::vector<double>{default_value.x(), default_value.y(), default_value.z()});
-    return {values[0], values[1], values[2]};
 }
 
 }  // namespace
@@ -49,33 +34,37 @@ math::CartesianState TargetTrajectory::evaluateTargetStateAt(double time_s) cons
 TargetConfig readTargetConfig(rclcpp::Node& node)
 {
     TargetConfig config;
-    config.type = targetTypeFromString(readParameter(node, "type", std::string{"figure_eight"}));
+    config.type =
+        targetTypeFromString(readParameter(node, prefix, "type", std::string{"figure_eight"}));
 
     if (config.type == TargetType::ConstantVelocity)
     {
-        config.position_m = readVector(node, "position_m", config.position_m);
-        config.velocity_mps = readVector(node, "velocity_mps", config.velocity_mps);
+        config.position_m = readVectorParameter(node, prefix, "position_m", config.position_m);
+        config.velocity_mps =
+            readVectorParameter(node, prefix, "velocity_mps", config.velocity_mps);
         return config;
     }
 
-    config.center_m = readVector(node, "center_m", config.center_m);
-    config.normal = readVector(node, "normal", config.normal);
+    config.center_m = readVectorParameter(node, prefix, "center_m", config.center_m);
+    config.normal = readVectorParameter(node, prefix, "normal", config.normal);
     config.reference_direction =
-        readVector(node, "reference_direction", config.reference_direction);
+        readVectorParameter(node, prefix, "reference_direction", config.reference_direction);
 
     if (config.type == TargetType::FigureEight)
     {
-        config.length_m = readParameter(node, "length_m", config.length_m);
-        config.width_m = readParameter(node, "width_m", config.width_m);
-        config.angular_rate_rps = readParameter(node, "angular_rate_rps", config.angular_rate_rps);
+        config.length_m = readParameter(node, prefix, "length_m", config.length_m);
+        config.width_m = readParameter(node, prefix, "width_m", config.width_m);
+        config.angular_rate_rps =
+            readParameter(node, prefix, "angular_rate_rps", config.angular_rate_rps);
     }
     else
     {
-        config.speed_mps = readParameter(node, "speed_mps", config.speed_mps);
-        config.load_factor = readParameter(node, "load_factor", config.load_factor);
+        config.speed_mps = readParameter(node, prefix, "speed_mps", config.speed_mps);
+        config.load_factor = readParameter(node, prefix, "load_factor", config.load_factor);
         if (config.type == TargetType::Helix)
         {
-            config.climb_angle_rad = readParameter(node, "climb_angle_rad", config.climb_angle_rad);
+            config.climb_angle_rad =
+                readParameter(node, prefix, "climb_angle_rad", config.climb_angle_rad);
         }
     }
     return config;

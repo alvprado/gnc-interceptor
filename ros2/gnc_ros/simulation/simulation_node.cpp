@@ -8,6 +8,8 @@ namespace gnc_ros
 
 SimulationNode::SimulationNode(rclcpp::NodeOptions const& options)
     : Node("simulation_node", options),
+      sim_(makeInterceptorModel(readInterceptorConfig(*this)), math::RK4Step{}),
+      sensor_(makeSensorModel(readSensorConfig(*this))),
       target_trajectory_(makeTargetTrajectory(readTargetConfig(*this)))
 {
     auto const qos = rclcpp::QoS{10};

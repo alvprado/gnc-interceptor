@@ -1,6 +1,8 @@
 add_library(gnc_simulation_node SHARED
     simulation_node.cpp
-    target_configuration.cpp)
+    interceptor_config.cpp
+    sensor_config.cpp
+    target_config.cpp)
 target_include_directories(gnc_simulation_node PRIVATE "${PROJECT_SOURCE_DIR}")
 ament_target_dependencies(gnc_simulation_node
     rclcpp rcl_interfaces rclcpp_components rosgraph_msgs gnc_interfaces)
@@ -19,7 +21,15 @@ install(TARGETS gnc_simulation_node
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/simulation)
 
 if(BUILD_TESTING)
-    ament_add_gtest(test_target_configuration test/test_target_configuration.cpp)
-    target_include_directories(test_target_configuration PRIVATE "${PROJECT_SOURCE_DIR}")
-    target_link_libraries(test_target_configuration gnc_simulation_node)
+    ament_add_gtest(test_target_config test/test_target_config.cpp)
+    target_include_directories(test_target_config PRIVATE "${PROJECT_SOURCE_DIR}")
+    target_link_libraries(test_target_config gnc_simulation_node)
+
+    ament_add_gtest(test_interceptor_config test/test_interceptor_config.cpp)
+    target_include_directories(test_interceptor_config PRIVATE "${PROJECT_SOURCE_DIR}")
+    target_link_libraries(test_interceptor_config gnc_simulation_node)
+
+    ament_add_gtest(test_sensor_config test/test_sensor_config.cpp)
+    target_include_directories(test_sensor_config PRIVATE "${PROJECT_SOURCE_DIR}")
+    target_link_libraries(test_sensor_config gnc_simulation_node)
 endif()

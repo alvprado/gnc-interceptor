@@ -4,12 +4,12 @@
 #include <vector>
 
 #include "simulation/simulation_node.hpp"
-#include "simulation/target_configuration.hpp"
+#include "simulation/target_config.hpp"
 
 namespace
 {
 
-class TargetConfigurationTest : public ::testing::Test
+class TargetConfigTest : public ::testing::Test
 {
 protected:
     static void SetUpTestSuite() { rclcpp::init(0, nullptr); }
@@ -19,7 +19,7 @@ protected:
     {
         rclcpp::NodeOptions options;
         options.parameter_overrides(parameters);
-        rclcpp::Node node{"target_configuration_test", options};
+        rclcpp::Node node{"target_config_test", options};
         return gnc_ros::readTargetConfig(node);
     }
 
@@ -38,7 +38,7 @@ protected:
     }
 };
 
-TEST_F(TargetConfigurationTest, DefaultsMatchStandaloneFigureEight)
+TEST_F(TargetConfigTest, DefaultsMatchStandaloneFigureEight)
 {
     auto const config = read({});
     EXPECT_EQ(config.type, gnc_ros::TargetType::FigureEight);
@@ -48,7 +48,7 @@ TEST_F(TargetConfigurationTest, DefaultsMatchStandaloneFigureEight)
             {3000.0, 500.0, 1500.0}, 1000.0, 500.0, 0.1, {1.0, 0.0, 1.0}, {0.0, -500.0, 0.0}});
 }
 
-TEST_F(TargetConfigurationTest, ReadsConstantVelocity)
+TEST_F(TargetConfigTest, ReadsConstantVelocity)
 {
     auto const config = read({
         {"target.type", "constant_velocity"},
@@ -63,7 +63,7 @@ TEST_F(TargetConfigurationTest, ReadsConstantVelocity)
     EXPECT_TRUE(state.acceleration_mps2.isZero());
 }
 
-TEST_F(TargetConfigurationTest, ReadsCircle)
+TEST_F(TargetConfigTest, ReadsCircle)
 {
     auto const config = read({
         {"target.type", "circle"},
@@ -78,7 +78,7 @@ TEST_F(TargetConfigurationTest, ReadsCircle)
         config, target::Circle{{10.0, 20.0, 30.0}, 40.0, -2.0, {0.0, 0.0, 1.0}, {1.0, 0.0, 0.0}});
 }
 
-TEST_F(TargetConfigurationTest, ReadsFigureEight)
+TEST_F(TargetConfigTest, ReadsFigureEight)
 {
     auto const config = read({
         {"target.type", "figure_eight"},
@@ -94,7 +94,7 @@ TEST_F(TargetConfigurationTest, ReadsFigureEight)
                     {-10.0, 20.0, 30.0}, 200.0, 80.0, -0.2, {0.0, 1.0, 0.0}, {1.0, 0.0, 1.0}});
 }
 
-TEST_F(TargetConfigurationTest, ReadsHelix)
+TEST_F(TargetConfigTest, ReadsHelix)
 {
     auto const config = read({
         {"target.type", "helix"},
@@ -111,7 +111,7 @@ TEST_F(TargetConfigurationTest, ReadsHelix)
         target::Helix{{10.0, 20.0, 30.0}, 60.0, 1.5, -0.3, {0.0, 0.0, 1.0}, {1.0, 0.0, 0.0}});
 }
 
-TEST_F(TargetConfigurationTest, ValidConfigurationCreatesSimulationInterfaces)
+TEST_F(TargetConfigTest, ValidConfigCreatesSimulationInterfaces)
 {
     gnc_ros::SimulationNode node;
     EXPECT_EQ(node.count_publishers("/clock"), 1U);
@@ -119,11 +119,11 @@ TEST_F(TargetConfigurationTest, ValidConfigurationCreatesSimulationInterfaces)
     EXPECT_EQ(node.count_subscribers("guidance/command"), 1U);
 }
 
-TEST_F(TargetConfigurationTest, ParametersAreReadOnlyAndSpecificToSelectedType)
+TEST_F(TargetConfigTest, ParametersAreReadOnlyAndSpecificToSelectedType)
 {
     rclcpp::NodeOptions options;
     options.parameter_overrides({{"target.type", "constant_velocity"}});
-    rclcpp::Node node{"target_configuration_test", options};
+    rclcpp::Node node{"target_config_test", options};
     (void)gnc_ros::readTargetConfig(node);
     EXPECT_FALSE(node.has_parameter("target.length_m"));
     EXPECT_FALSE(node.set_parameter({"target.type", "figure_eight"}).successful);
