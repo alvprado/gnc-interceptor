@@ -1,0 +1,5 @@
+# Other target settings are inherited from simulation/config/defaults.yaml.
+simulation_node:
+  ros__parameters:
+    target:
+      type: figure_eight

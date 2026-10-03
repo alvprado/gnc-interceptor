@@ -1,4 +1,4 @@
-#include "gnc_ros/simulation_node.hpp"
+#include "simulation/simulation_node.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>
 #include <utility>
@@ -7,7 +7,8 @@ namespace gnc_ros
 {
 
 SimulationNode::SimulationNode(rclcpp::NodeOptions const& options)
-    : Node("simulation_node", options)
+    : Node("simulation_node", options),
+      target_trajectory_(makeTargetTrajectory(readTargetConfig(*this)))
 {
     auto const qos = rclcpp::QoS{10};
     interceptor_publisher_ =

@@ -1,4 +1,4 @@
-#include "gnc_ros/guidance_node.hpp"
+#include "guidance/guidance_node.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>
 #include <utility>

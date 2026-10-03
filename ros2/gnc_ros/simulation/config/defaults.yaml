@@ -1,0 +1,11 @@
+simulation_node:
+  ros__parameters:
+    use_sim_time: true
+    target:
+      type: figure_eight
+      center_m: [3000.0, 500.0, 1500.0]
+      length_m: 1000.0
+      width_m: 500.0
+      angular_rate_rps: 0.1
+      normal: [1.0, 0.0, 1.0]
+      reference_direction: [0.0, -500.0, 0.0]

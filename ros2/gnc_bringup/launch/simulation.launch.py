@@ -12,29 +12,35 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     share = Path(get_package_share_directory("gnc_bringup"))
-    parameters = str(share / "config" / "simulation.yaml")
+    nodes_share = Path(get_package_share_directory("gnc_ros"))
+    parameters = LaunchConfiguration("params_file")
 
     return LaunchDescription([
+        DeclareLaunchArgument(
+            "params_file",
+            default_value=str(share / "config" / "scenarios" / "figure_eight.yaml"),
+            description="Scenario YAML overrides, applied after each node's defaults.",
+        ),
         DeclareLaunchArgument("rviz", default_value="false", description="Open RViz."),
         Node(
             package="gnc_ros",
             executable="simulation_node",
             name="simulation_node",
-            parameters=[parameters],
+            parameters=[str(nodes_share / "simulation" / "config" / "defaults.yaml"), parameters],
             output="screen",
         ),
         Node(
             package="gnc_ros",
             executable="estimation_node",
             name="estimation_node",
-            parameters=[parameters],
+            parameters=[str(nodes_share / "estimation" / "config" / "defaults.yaml"), parameters],
             output="screen",
         ),
         Node(
             package="gnc_ros",
             executable="guidance_node",
             name="guidance_node",
-            parameters=[parameters],
+            parameters=[str(nodes_share / "guidance" / "config" / "defaults.yaml"), parameters],
             output="screen",
         ),
         Node(

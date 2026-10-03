@@ -10,8 +10,10 @@
   <depend>gnc_core</depend>
   <depend>gnc_interfaces</depend>
   <depend>rclcpp</depend>
+  <depend>rcl_interfaces</depend>
   <depend>rclcpp_components</depend>
   <depend>rosgraph_msgs</depend>
+  <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
