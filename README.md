@@ -40,7 +40,7 @@ The target performs a figure-eight maneuver in a tilted plane. The interceptor s
 Prerequisites:
 
 - A C++20 compiler and a native build tool such as Make or Ninja.
-- **CMake 3.23 or newer**: the root project declares 3.20, but the pinned iLQR dependency requires 3.23.
+- **CMake 3.23 or newer**.
 - **Eigen 3.4 or newer**, discoverable as `Eigen3` by CMake.
 - **ilqr-cpp**, the iLQR library, auto-fetched by CMake.
 - **autodiff**, installed with its CMake package and `autodiff::autodiff` target. Predictive guidance requires it; it is not fetched automatically.
@@ -51,6 +51,13 @@ From the repository root:
 cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build --target standalone 
 ```
+
+## ROS2 build
+
+The [`ros2/gnc_core`](ros2/gnc_core/) package builds and exports the same libraries
+with `ament_cmake`. See [ROS2 integration](ros2/README.md) for dependencies, colcon
+build/test commands, and downstream CMake usage. This first integration step
+provides the core libraries; nodes and message packages will follow.
 
 
 ## Run the simulation

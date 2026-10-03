@@ -11,7 +11,7 @@ target_include_directories(gnc_target_state_estimation PUBLIC
 
 target_link_libraries(gnc_target_state_estimation
     PUBLIC gnc::math gnc::sensor_model
-    PRIVATE gnc_compile_options)
+    PRIVATE $<BUILD_INTERFACE:gnc_compile_options>)
 
 target_compile_features(gnc_target_state_estimation PUBLIC cxx_std_20)
 

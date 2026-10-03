@@ -9,7 +9,7 @@ target_include_directories(gnc_simulation PUBLIC
 
 target_link_libraries(gnc_simulation
     PUBLIC gnc::math
-    PRIVATE gnc_compile_options)
+    PRIVATE $<BUILD_INTERFACE:gnc_compile_options>)
 
 target_compile_features(gnc_simulation PUBLIC cxx_std_20)
 

@@ -10,7 +10,7 @@ target_include_directories(gnc_sensor_model PUBLIC
 
 target_link_libraries(gnc_sensor_model
     PUBLIC gnc::math
-    PRIVATE gnc_compile_options)
+    PRIVATE $<BUILD_INTERFACE:gnc_compile_options>)
 
 target_compile_features(gnc_sensor_model PUBLIC cxx_std_20)
 

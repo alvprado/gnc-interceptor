@@ -1,5 +1,7 @@
 AGENTS.md
 build/
+ros2/install/
+ros2/log/
 compile_commands.json
 .cache/
 standalone/outputs/

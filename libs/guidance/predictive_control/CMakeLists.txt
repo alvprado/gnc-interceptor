@@ -11,7 +11,7 @@ target_include_directories(gnc_guidance_predictive PUBLIC
 
 target_link_libraries(gnc_guidance_predictive
     PUBLIC gnc::guidance::common ilqr::ilqr autodiff::autodiff
-    PRIVATE gnc_compile_options)
+    PRIVATE $<BUILD_INTERFACE:gnc_compile_options>)
 
 target_compile_features(gnc_guidance_predictive PUBLIC cxx_std_20)
 
