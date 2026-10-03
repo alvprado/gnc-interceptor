@@ -1,0 +1,4 @@
+# Reset the simulation to its configured initial conditions.
+---
+bool success
+string message

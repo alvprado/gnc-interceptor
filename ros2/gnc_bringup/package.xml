@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>gnc_bringup</name>
+  <version>0.1.0</version>
+  <description>Launch files and configuration for the GNC simulation nodes.</description>
+  <maintainer email="alvarezprado96@gmail.com">Andres Alvarez</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>gnc_ros</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rclcpp_components</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <test_depend>gnc_interfaces</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>rclpy</test_depend>
+  <test_depend>rcl_interfaces</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -52,12 +52,6 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build --target standalone 
 ```
 
-## ROS2 build
-
-The [`ros2/gnc_core`](ros2/gnc_core/) package builds and exports the same libraries
-with `ament_cmake`. See [ROS2 integration](ros2/README.md) for dependencies, colcon
-build/test commands, and downstream CMake usage. This first integration step
-provides the core libraries; nodes and message packages will follow.
 
 
 ## Run the simulation
@@ -96,4 +90,9 @@ standalone/
   main.cpp                        Simulation entry point and scenario settings
   csv_logger.hpp                  Run logging
   visualization/                  Python analysis tools
+ros2/
+  gnc_core/                       Build and export the C++ libraries
+  gnc_interfaces/                 Message and service definitions
+  gnc_ros/                        Simulation, estimation, and guidance nodes
+  gnc_bringup/                    Launch, parameters, and RViz configuration
 ```
