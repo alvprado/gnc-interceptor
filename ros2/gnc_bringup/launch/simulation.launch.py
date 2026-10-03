@@ -1,4 +1,4 @@
-"""Launch the three GNC components with shared simulation-time settings."""
+"""Launch the three GNC nodes as independent processes."""
 
 from pathlib import Path
 
@@ -7,45 +7,36 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import ComposableNodeContainer, Node
-from launch_ros.descriptions import ComposableNode
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
     share = Path(get_package_share_directory("gnc_bringup"))
     parameters = str(share / "config" / "simulation.yaml")
 
-    container = ComposableNodeContainer(
-        name="gnc_container",
-        namespace="",
-        package="rclcpp_components",
-        executable="component_container",
-        output="screen",
-        composable_node_descriptions=[
-            ComposableNode(
-                package="gnc_ros",
-                plugin="gnc_ros::SimulationNode",
-                name="simulation_node",
-                parameters=[parameters],
-            ),
-            ComposableNode(
-                package="gnc_ros",
-                plugin="gnc_ros::EstimationNode",
-                name="estimation_node",
-                parameters=[parameters],
-            ),
-            ComposableNode(
-                package="gnc_ros",
-                plugin="gnc_ros::GuidanceNode",
-                name="guidance_node",
-                parameters=[parameters],
-            ),
-        ],
-    )
-
     return LaunchDescription([
         DeclareLaunchArgument("rviz", default_value="false", description="Open RViz."),
-        container,
+        Node(
+            package="gnc_ros",
+            executable="simulation_node",
+            name="simulation_node",
+            parameters=[parameters],
+            output="screen",
+        ),
+        Node(
+            package="gnc_ros",
+            executable="estimation_node",
+            name="estimation_node",
+            parameters=[parameters],
+            output="screen",
+        ),
+        Node(
+            package="gnc_ros",
+            executable="guidance_node",
+            name="guidance_node",
+            parameters=[parameters],
+            output="screen",
+        ),
         Node(
             package="rviz2",
             executable="rviz2",

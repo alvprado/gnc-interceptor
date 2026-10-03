@@ -14,12 +14,6 @@
   <exec_depend>rclcpp_components</exec_depend>
   <exec_depend>rviz2</exec_depend>
 
-  <test_depend>gnc_interfaces</test_depend>
-  <test_depend>launch_testing_ament_cmake</test_depend>
-  <test_depend>launch_testing</test_depend>
-  <test_depend>rclpy</test_depend>
-  <test_depend>rcl_interfaces</test_depend>
-
   <export>
     <build_type>ament_cmake</build_type>
   </export>
