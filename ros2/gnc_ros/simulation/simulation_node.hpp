@@ -42,7 +42,7 @@ private:
     gnc_interfaces::msg::GuidanceCommand::ConstSharedPtr latest_command_;
 
     // Components
-    UAVSimulator sim_;
+    UAVSimulator interceptor_;
     sensor_model::RadarModel sensor_;
     TargetTrajectory target_trajectory_;
 };
