@@ -44,6 +44,11 @@ StateCov EKFTargetStateEstimation::errorCovarianceAt(math::Timestamp timestamp) 
     return error_cov_pred;
 }
 
+bool EKFTargetStateEstimation::isInitialized() const noexcept
+{
+    return initialized_;
+}
+
 void EKFTargetStateEstimation::processMeasurement(
     sensor_model::SensorMeasurement const& measurement, math::VehicleState const& interceptor_state)
 {

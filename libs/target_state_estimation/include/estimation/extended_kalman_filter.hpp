@@ -82,6 +82,9 @@ public:
     /// @returns The predicted error covariance at timestamp.
     [[nodiscard]] StateCov errorCovarianceAt(math::Timestamp timestamp) const;
 
+    /// @brief Whether the track has been initialized by a first measurement.
+    [[nodiscard]] bool isInitialized() const noexcept;
+
 private:
     /// @brief Initialize the track from the first measurement ever received.
     /// @param[in] measurement The first radar measurement of the target.

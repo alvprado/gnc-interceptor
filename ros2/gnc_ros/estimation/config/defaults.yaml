@@ -1,3 +1,11 @@
 estimation_node:
   ros__parameters:
     use_sim_time: true
+    estimation:
+      dt_s: 0.1
+    ekf:
+      jerk_noise_var: 10.0
+      sensor_noise_var: [100.0, 4.0, 4.0e-6, 4.0e-6]
+      initial_position_var: 10000.0
+      initial_velocity_var: 40000.0
+      initial_acceleration_var: 400.0

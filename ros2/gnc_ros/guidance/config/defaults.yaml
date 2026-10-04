@@ -1,3 +1,29 @@
 guidance_node:
   ros__parameters:
     use_sim_time: true
+    guidance:
+      dt_s: 0.1  # Guidance loop rate
+    vehicle:
+      mass_kg: 2.5
+      rho_kgpm3: 1.225
+      frontal_area_m2: 0.1
+      drag_coeff: 0.08
+    controller:
+      # Only parameters used by the selected controller type are read.
+      type: predictive  # proportional_navigation or predictive
+      # Shared by both controllers.
+      min_load_factor: -3.0
+      max_load_factor: 9.0
+      max_bank_angle_rad: 3.141592653589793
+      boost_phase_switch_speed_mps: 90.0
+      boost_phase_thrust_n: 150.0
+      # Proportional navigation.
+      navigation_gain: 3.0
+      # Predictive (iLQR).
+      horizon: 50
+      min_horizon: 5
+      dt: 0.1  # iLQR horizon step
+      load_factor_rate_weight: 0.024691358024691357  # 2 / 9^2
+      bank_rate_weight: 0.2026423672846752  # 2 / pi^2
+      final_interception_weight: 10.0
+      running_interception_weight: 10.0
