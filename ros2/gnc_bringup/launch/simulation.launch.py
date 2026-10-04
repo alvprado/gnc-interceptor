@@ -21,7 +21,7 @@ def generate_launch_description():
             default_value=str(share / "config" / "scenarios" / "figure_eight.yaml"),
             description="Scenario YAML overrides, applied after each node's defaults.",
         ),
-        DeclareLaunchArgument("rviz", default_value="false", description="Open RViz."),
+        DeclareLaunchArgument("rviz", default_value="true", description="Open RViz."),
         Node(
             package="gnc_ros",
             executable="simulation_node",
@@ -44,11 +44,21 @@ def generate_launch_description():
             output="screen",
         ),
         Node(
+            package="gnc_ros",
+            executable="visualization_node",
+            name="visualization_node",
+            parameters=[
+                str(nodes_share / "visualization" / "config" / "defaults.yaml"), parameters
+            ],
+            output="screen",
+        ),
+        Node(
             package="rviz2",
             executable="rviz2",
             arguments=["-d", str(share / "rviz" / "simulation.rviz")],
             parameters=[{"use_sim_time": True}],
             condition=IfCondition(LaunchConfiguration("rviz")),
+            additional_env={'LIBGL_ALWAYS_SOFTWARE': '1'},
             output="screen",
         ),
     ])

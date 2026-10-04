@@ -7,6 +7,7 @@ find_package(rclcpp REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rosgraph_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(gnc_interfaces REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -30,6 +31,7 @@ add_subdirectory(common)
 add_subdirectory(simulation)
 add_subdirectory(guidance)
 add_subdirectory(estimation)
+add_subdirectory(visualization)
 
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../LICENSE"
     DESTINATION share/${PROJECT_NAME})
