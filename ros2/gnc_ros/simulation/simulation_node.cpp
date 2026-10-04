@@ -63,7 +63,6 @@ void SimulationNode::simulationCallback()
     interceptor_publisher_->publish(toMsg(interceptor_state_, stamp, "world"));
     radar_publisher_->publish(toMsg(measurement, "interceptor_body"));
 
-    // Hold the initial state until guidance supplies a command.
     if (command_)
     {
         interceptor_state_ =

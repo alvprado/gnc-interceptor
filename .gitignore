@@ -7,3 +7,5 @@ compile_commands.json
 standalone/outputs/
 __pycache__/
 .DS_Store
+install/
+log/

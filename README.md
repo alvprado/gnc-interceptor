@@ -91,7 +91,6 @@ standalone/
   csv_logger.hpp                  Run logging
   visualization/                  Python analysis tools
 ros2/
-  gnc_core/                       Build and export the C++ libraries
   gnc_interfaces/                 Message and service definitions
   gnc_ros/                        Simulation, estimation, and guidance nodes
   gnc_bringup/                    Launch, parameters, and RViz configuration
