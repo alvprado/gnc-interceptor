@@ -3,7 +3,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <vector>
 
-#include "simulation/interceptor_config.hpp"
+#include "simulation/parameters/interceptor_config.hpp"
 
 namespace
 {

@@ -3,7 +3,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <vector>
 
-#include "simulation/sensor_config.hpp"
+#include "simulation/parameters/sensor_config.hpp"
 
 namespace
 {

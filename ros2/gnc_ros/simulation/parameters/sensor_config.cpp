@@ -1,4 +1,4 @@
-#include "simulation/sensor_config.hpp"
+#include "simulation/parameters/sensor_config.hpp"
 
 #include "common/parameter_utils.hpp"
 

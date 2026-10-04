@@ -1,4 +1,4 @@
-#include "simulation/interceptor_config.hpp"
+#include "simulation/parameters/interceptor_config.hpp"
 
 #include "common/parameter_utils.hpp"
 

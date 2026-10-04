@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "simulation/simulation_node.hpp"
-#include "simulation/target_config.hpp"
+#include "simulation/parameters/target_config.hpp"
 
 namespace
 {

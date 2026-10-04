@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <rclcpp/rclcpp.hpp>
 #include <rosgraph_msgs/msg/clock.hpp>
 
@@ -8,11 +9,11 @@
 #include "gnc_interfaces/msg/radar_measurement.hpp"
 #include "gnc_interfaces/msg/target_state.hpp"
 #include "gnc_interfaces/srv/reset_simulation.hpp"
-#include "math/integrators.hpp"
-#include "simulation/interceptor_config.hpp"
-#include "simulation/sensor_config.hpp"
+#include "simulation/parameters/interceptor_config.hpp"
+#include "simulation/parameters/sensor_config.hpp"
+#include "simulation/parameters/simulation_config.hpp"
 #include "simulation/simulator.hpp"
-#include "simulation/target_config.hpp"
+#include "simulation/parameters/target_config.hpp"
 
 namespace gnc_ros
 {
@@ -24,7 +25,11 @@ public:
     explicit SimulationNode(rclcpp::NodeOptions const& options = rclcpp::NodeOptions{});
 
 private:
-    using UAVSimulator = simulation::UAVSimulator<simulation::UAV3DofModel, math::RK4Step>;
+    using UAVSimulator = simulation::UAVSimulator<simulation::UAV3DofModel, SimConfig::Integrator>;
+
+    // Callbacks
+    void guidanceCommandCallback(gnc_interfaces::msg::GuidanceCommand::ConstSharedPtr command);
+    void simulationCallback();
 
     // Publishers
     rclcpp::Publisher<gnc_interfaces::msg::InterceptorState>::SharedPtr interceptor_publisher_;
@@ -38,8 +43,14 @@ private:
     // Service
     rclcpp::Service<gnc_interfaces::srv::ResetSimulation>::SharedPtr reset_service_;
 
+    // Timer
+    rclcpp::TimerBase::SharedPtr simulation_timer_;
+
     // State
-    gnc_interfaces::msg::GuidanceCommand::ConstSharedPtr latest_command_;
+    SimConfig const sim_config_{0.01, math::RK4Step{}};
+    std::uint64_t step_count_{0};
+    math::VehicleState interceptor_state_{};
+    gnc_interfaces::msg::GuidanceCommand::ConstSharedPtr command_{};
 
     // Components
     UAVSimulator interceptor_;
