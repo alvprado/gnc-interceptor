@@ -54,8 +54,7 @@ ros2 launch gnc_bringup simulation.launch.py
 With the launch file running, trigger an interception attempt in another terminal:
 
 ```sh
-ros2 action send_goal /interception/start gnc_interfaces/action/Intercept \
-  "{interception_distance_m: 1.0, max_interception_time_s: 60.0}"
+ros2 action send_goal /interception/start gnc_interfaces/action/Intercept '{interception_distance_m: 1.0, max_interception_time_s: 60.0}' --feedback
 ```
 
 ## Standalone
