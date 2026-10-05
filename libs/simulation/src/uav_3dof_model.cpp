@@ -77,12 +77,15 @@ math::VehicleState UAV3DofModel::toVehicleState(StateVec const& state,
     return vehicle;
 }
 
-UAV3DofModel::StateVec UAV3DofModel::fromVehicleState(math::VehicleState const& vehicle) const noexcept
+UAV3DofModel::StateVec UAV3DofModel::fromVehicleState(
+    math::VehicleState const& vehicle) const noexcept
 {
     auto const& velocity = vehicle.cartesian.velocity_mps;
     auto const v = velocity.norm();
-    auto const psi = std::atan2(velocity.y(), velocity.x());
-    auto const gamma = (v > 0.0) ? std::asin(std::clamp(velocity.z() / v, -1.0, 1.0)) : 0.0;
+    auto const attitude = math::eulerAnglesFromAttitude(vehicle.attitude);
+    auto const psi = (v > 0.0) ? std::atan2(velocity.y(), velocity.x()) : attitude.heading_rad;
+    auto const gamma = (v > 0.0) ? std::asin(std::clamp(velocity.z() / v, -1.0, 1.0))
+                                 : attitude.flight_path_angle_rad;
 
     StateVec state;
     state.head<3>() = vehicle.cartesian.position_m;

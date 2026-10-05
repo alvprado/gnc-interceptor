@@ -36,7 +36,9 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
 
     if (!has_exited_boost_ && speed < config_.boost_phase_switch_speed_mps)
     {
-        return Eigen::Vector3d{config_.boost_phase_thrust_n, 1.0, 0.0};
+        double const load =
+            speed > min_speed_mps ? interceptor.velocity_mps.head<2>().norm() / speed : 1.0;
+        return Eigen::Vector3d{config_.boost_phase_thrust_n, load, 0.0};
     }
     has_exited_boost_ = true;
 

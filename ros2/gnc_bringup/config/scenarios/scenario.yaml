@@ -51,7 +51,7 @@ guidance_node:
       # Trim thrust holds whatever speed the interceptor has at hand-off, so
       # this sets its cruise speed: ~120 kph, a bit above the target's.
       boost_phase_switch_speed_mps: 33.33
-      boost_phase_thrust_n: 30.0
+      boost_phase_thrust_n: 100.0
       # Proportional navigation.
       navigation_gain: 3.0
       # Predictive (iLQR).

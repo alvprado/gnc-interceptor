@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -57,21 +58,22 @@ protected:
             [this](gnc_interfaces::msg::RadarMeasurement::ConstSharedPtr message)
             { samples_[key(message->header.stamp)].radar = *message; });
         clock_sub_ = observer_->create_subscription<rosgraph_msgs::msg::Clock>(
-            "/clock", rclcpp::ClockQoS{},
-            [this](rosgraph_msgs::msg::Clock::ConstSharedPtr message)
+            "/clock", rclcpp::ClockQoS{}, [this](rosgraph_msgs::msg::Clock::ConstSharedPtr message)
             { samples_[key(message->clock)].clock_received = true; });
         command_pub_ = observer_->create_publisher<gnc_interfaces::msg::GuidanceCommand>(
             "guidance/command", 10);
-
         rclcpp::NodeOptions options;
         options.use_intra_process_comms(true);
         options.parameter_overrides({
-            {"use_sim_time", true}, {"simulation.dt_s", 0.01},
+            {"use_sim_time", true},
+            {"simulation.dt_s", 0.01},
             {"target.type", "constant_velocity"},
             {"target.position_m", std::vector<double>{100.0, 20.0, 30.0}},
             {"target.velocity_mps", std::vector<double>{3.0, 0.0, 0.0}},
-            {"sensor.range_var", 0.0}, {"sensor.range_rate_var", 0.0},
-            {"sensor.azimuth_var", 0.0}, {"sensor.elevation_var", 0.0},
+            {"sensor.range_var", 0.0},
+            {"sensor.range_rate_var", 0.0},
+            {"sensor.azimuth_var", 0.0},
+            {"sensor.elevation_var", 0.0},
         });
         simulation_ = std::make_shared<gnc_ros::SimulationNode>(options);
         executor_.add_node(observer_);
@@ -97,6 +99,13 @@ protected:
         return it != samples_.end() && it->second.complete();
     }
 
+    std::optional<gnc_interfaces::msg::InterceptorState> latestInterceptor() const
+    {
+        for (auto it = samples_.rbegin(); it != samples_.rend(); ++it)
+            if (it->second.interceptor) return it->second.interceptor;
+        return std::nullopt;
+    }
+
     std::map<std::int64_t, Sample> samples_;
     rclcpp::Node::SharedPtr observer_;
     std::shared_ptr<gnc_ros::SimulationNode> simulation_;
@@ -108,13 +117,14 @@ protected:
     rclcpp::executors::SingleThreadedExecutor executor_;
 };
 
-TEST_F(SimulationNodeTest, PublishesAllSamplesAndClockBeforeFirstCommand)
+TEST_F(SimulationNodeTest, PublishesInitialSceneAndClockWhileWaitingForGoal)
 {
-    ASSERT_TRUE(spinUntil([&] { return hasSample(0) && hasSample(10000000) && hasSample(20000000); }));
+    ASSERT_TRUE(
+        spinUntil([&] { return hasSample(0) && hasSample(10000000) && hasSample(20000000); }));
     for (std::int64_t const stamp : {0LL, 10000000LL, 20000000LL})
     {
         auto const& sample = samples_.at(stamp);
-        double const x = 100.0 + 3.0 * static_cast<double>(stamp) / 1.0e9;
+        double const x = 100.0;
         EXPECT_NEAR(sample.target->position_m.x, x, 1.0e-12);
         EXPECT_EQ(sample.target->header.frame_id, "world");
         EXPECT_EQ(sample.interceptor->header.frame_id, "world");
@@ -129,19 +139,22 @@ TEST_F(SimulationNodeTest, PublishesAllSamplesAndClockBeforeFirstCommand)
 
 TEST_F(SimulationNodeTest, ReceivedCommandAdvancesPersistentInterceptorState)
 {
-    ASSERT_TRUE(spinUntil([&] { return hasSample(0) && hasSample(10000000); }));
+    ASSERT_TRUE(simulation_->start(Eigen::Vector3d{100.0, 20.0, 30.0}, 0));
+    ASSERT_TRUE(spinUntil([&] { return latestInterceptor() && latestInterceptor()->run_id == 1; }));
     gnc_interfaces::msg::GuidanceCommand command;
+    command.run_id = 1;
     command.thrust_n = 50.0;
     command.load_factor = 1.0;
     command_pub_->publish(command);
-    ASSERT_TRUE(spinUntil([&]
-    {
-        for (auto const& [stamp, sample] : samples_)
+    ASSERT_TRUE(spinUntil(
+        [&]
         {
-            if (sample.complete() && sample.interceptor->position_m.x > 0.02) return true;
-        }
-        return false;
-    }));
+            for (auto const& [stamp, sample] : samples_)
+            {
+                if (sample.complete() && sample.interceptor->position_m.x > 0.02) return true;
+            }
+            return false;
+        }));
 
     simulation::UAVSimulator<simulation::UAV3DofModel, math::RK4Step> const reference{
         simulation::UAV3DofModel{simulation::UAV3DofModelParams{}}, math::RK4Step{}};
@@ -150,7 +163,8 @@ TEST_F(SimulationNodeTest, ReceivedCommandAdvancesPersistentInterceptorState)
     {
         auto const next = samples_.find(it->first + 10000000);
         if (!it->second.complete() || next == samples_.end() || !next->second.complete() ||
-            it->second.interceptor->velocity_mps.x == 0.0) continue;
+            it->second.interceptor->velocity_mps.x == 0.0)
+            continue;
         auto const expected = reference.step(gnc_ros::fromMsg(*it->second.interceptor),
                                              gnc_ros::fromMsg(command), 0.01);
         auto const actual = gnc_ros::fromMsg(*next->second.interceptor);
@@ -162,6 +176,42 @@ TEST_F(SimulationNodeTest, ReceivedCommandAdvancesPersistentInterceptorState)
         checked_step = true;
     }
     EXPECT_TRUE(checked_step);
+}
+
+TEST_F(SimulationNodeTest, StartRejectsInvalidDirectionAndStaleRun)
+{
+    EXPECT_FALSE(simulation_->start(Eigen::Vector3d::Zero(), 0));
+    EXPECT_FALSE(simulation_->start(Eigen::Vector3d{NAN, 0.0, 1.0}, 0));
+    EXPECT_FALSE(simulation_->start(Eigen::Vector3d{1.0, 0.0, 1.0}, 10));
+    EXPECT_TRUE(simulation_->start(Eigen::Vector3d{1.0, 0.0, 1.0}, 0));
+    EXPECT_FALSE(simulation_->start(Eigen::Vector3d{1.0, 0.0, 1.0}, 1));
+}
+
+TEST_F(SimulationNodeTest, LaunchFromRestClimbsAndPauseResetHoldScene)
+{
+    ASSERT_TRUE(simulation_->start(Eigen::Vector3d{100.0, 20.0, 30.0}, 0));
+    ASSERT_TRUE(spinUntil([&] { return latestInterceptor() && latestInterceptor()->run_id == 1; }));
+    auto const initial = gnc_ros::fromMsg(*latestInterceptor());
+    EXPECT_TRUE((initial.attitude * Eigen::Vector3d::UnitX())
+                    .isApprox(Eigen::Vector3d{100.0, 20.0, 30.0}.normalized()));
+    gnc_interfaces::msg::GuidanceCommand command;
+    command.run_id = 1;
+    command.thrust_n = 50.0;
+    command.load_factor = 1.0;
+    command_pub_->publish(command);
+    ASSERT_TRUE(spinUntil([&] { return latestInterceptor()->position_m.z > 0.01; }));
+    simulation_->pause();
+    auto const count = samples_.size();
+    ASSERT_TRUE(spinUntil([&] { return samples_.size() > count + 5; }));
+    auto const paused = *latestInterceptor();
+    auto const stamp = key(paused.header.stamp);
+    ASSERT_TRUE(
+        spinUntil([&] { return key(latestInterceptor()->header.stamp) > stamp + 50000000; }));
+    EXPECT_EQ(latestInterceptor()->position_m, paused.position_m);
+    simulation_->reset();
+    ASSERT_TRUE(spinUntil([&] { return latestInterceptor()->run_id == 2; }));
+    EXPECT_DOUBLE_EQ(latestInterceptor()->position_m.z, 0.0);
+    EXPECT_DOUBLE_EQ(latestInterceptor()->attitude.w, 1.0);
 }
 
 }  // namespace

@@ -63,11 +63,8 @@ public:
                                                     ControlVec const& control) const noexcept;
 
     /// @brief Map a vehicle state back to the model's native state.
-    /// @details Exact inverse of the position/velocity view returned by
-    /// toVehicleState(): gamma's range makes (psi, gamma) a bijection with
-    /// the velocity direction. Orientation is ignored: it isn't part of the
-    /// native state (bank isn't recoverable from state alone; it's a
-    /// control, not a state).
+    /// @details Uses velocity direction while moving and body attitude at rest.
+    /// Bank remains a control input and is not recovered into the native state.
     /// @param[in] vehicle The vehicle state to convert.
     /// @returns The equivalent native state.
     [[nodiscard]] StateVec fromVehicleState(math::VehicleState const& vehicle) const noexcept;

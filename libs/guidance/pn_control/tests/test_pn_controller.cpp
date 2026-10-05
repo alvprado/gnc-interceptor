@@ -86,3 +86,18 @@ TEST_F(PNControllerTest, AboveSwitchSpeedEngagesGuidanceForNonCollinearGeometry)
 
 }  // namespace
 }  // namespace guidance
+
+TEST(PNControllerBoostTest, HoldsClimbAngleDuringBoostAndRemainsFiniteAtRest)
+{
+    guidance::PNControllerConfig const config;
+    guidance::PNController controller{config};
+    math::CartesianState interceptor;
+    math::CartesianState target;
+    target.position_m = {100.0, 0.0, 100.0};
+    EXPECT_TRUE(controller.step(target, interceptor, 0.1).allFinite());
+    interceptor.velocity_mps = {3.0, 0.0, 4.0};
+    auto const control = controller.step(target, interceptor, 0.1);
+    EXPECT_DOUBLE_EQ(control[0], config.boost_phase_thrust_n);
+    EXPECT_NEAR(control[1], 0.6, 1.0e-12);
+    EXPECT_DOUBLE_EQ(control[2], 0.0);
+}

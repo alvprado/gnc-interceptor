@@ -1,0 +1,13 @@
+# Success when the ground-truth separation is strictly below this distance.
+float64 interception_distance_m 1.0
+# Maximum simulated attempt duration after launch.
+float64 max_interception_time_s 60.0
+---
+bool success
+string message
+float64 final_distance_m
+float64 elapsed_time_s
+---
+float64 distance_m
+float64 interceptor_altitude_m
+float64 elapsed_time_s

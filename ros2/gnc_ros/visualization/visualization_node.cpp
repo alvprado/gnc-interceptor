@@ -36,23 +36,23 @@ namespace
 VisualizationNode::VisualizationNode(rclcpp::NodeOptions const& options)
     : Node("visualization_node", options),
       target_marker_(makeMarker("target", {1.0F, 0.2F, 0.2F, 1.0F},
-                                 visualization_msgs::msg::Marker::SPHERE,
-                                 readParameter(*this, "target", "diameter_m", 10.0))),
+                                visualization_msgs::msg::Marker::SPHERE,
+                                readParameter(*this, "target", "diameter_m", 10.0))),
       interceptor_marker_(makeMarker("interceptor", {0.2F, 0.6F, 1.0F, 1.0F},
-                                      visualization_msgs::msg::Marker::SPHERE,
-                                      readParameter(*this, "interceptor", "diameter_m", 10.0))),
+                                     visualization_msgs::msg::Marker::SPHERE,
+                                     readParameter(*this, "interceptor", "diameter_m", 10.0))),
       target_trail_marker_(makeMarker("target_trail", {1.0F, 0.2F, 0.2F, 0.65F},
-                                       visualization_msgs::msg::Marker::LINE_STRIP,
-                                       readParameter(*this, "trail", "width_m", 0.1))),
+                                      visualization_msgs::msg::Marker::LINE_STRIP,
+                                      readParameter(*this, "trail", "width_m", 0.1))),
       interceptor_trail_marker_(makeMarker("interceptor_trail", {0.2F, 0.6F, 1.0F, 0.65F},
-                                            visualization_msgs::msg::Marker::LINE_STRIP,
-                                            target_trail_marker_.scale.x))
+                                           visualization_msgs::msg::Marker::LINE_STRIP,
+                                           target_trail_marker_.scale.x))
 {
     history_points_ = static_cast<std::size_t>(
         readParameter<std::int64_t>(*this, "trail", "history_points", 300));
-    sample_period_ns_ = rclcpp::Duration::from_seconds(
-                            readParameter(*this, "trail", "sample_period_s", 0.1))
-                            .nanoseconds();
+    sample_period_ns_ =
+        rclcpp::Duration::from_seconds(readParameter(*this, "trail", "sample_period_s", 0.1))
+            .nanoseconds();
 
     auto const qos = rclcpp::QoS{10};
     marker_publisher_ =
@@ -68,7 +68,9 @@ VisualizationNode::VisualizationNode(rclcpp::NodeOptions const& options)
 
 void VisualizationNode::targetCallback(gnc_interfaces::msg::TargetState::ConstSharedPtr state)
 {
-    updateTrail(state->header, state->position_m, target_history_, target_trail_marker_);
+    if (state->run_id < target_history_.run_id) return;
+    updateTrail(state->header, state->position_m, state->run_id, target_history_,
+                target_trail_marker_);
     target_marker_.header = target_trail_marker_.header;
     target_marker_.pose.position = state->position_m;
     publishMarkers();
@@ -77,7 +79,9 @@ void VisualizationNode::targetCallback(gnc_interfaces::msg::TargetState::ConstSh
 void VisualizationNode::interceptorCallback(
     gnc_interfaces::msg::InterceptorState::ConstSharedPtr state)
 {
-    updateTrail(state->header, state->position_m, interceptor_history_, interceptor_trail_marker_);
+    if (state->run_id < interceptor_history_.run_id) return;
+    updateTrail(state->header, state->position_m, state->run_id, interceptor_history_,
+                interceptor_trail_marker_);
     interceptor_marker_.header = interceptor_trail_marker_.header;
     interceptor_marker_.pose.position = state->position_m;
     interceptor_marker_.pose.orientation = state->attitude;
@@ -85,16 +89,18 @@ void VisualizationNode::interceptorCallback(
 }
 
 void VisualizationNode::updateTrail(std_msgs::msg::Header const& header,
-                                    geometry_msgs::msg::Point const& position, Trail& history,
-                                    visualization_msgs::msg::Marker& marker)
+                                    geometry_msgs::msg::Point const& position, std::uint64_t run_id,
+                                    Trail& history, visualization_msgs::msg::Marker& marker)
 {
     auto const stamp_ns = rclcpp::Time(header.stamp).nanoseconds();
     auto const frame = header.frame_id.empty() ? std::string{"world"} : header.frame_id;
-    if (stamp_ns < history.last_received_ns || frame != marker.header.frame_id)
+    if (run_id != history.run_id || stamp_ns < history.last_received_ns ||
+        frame != marker.header.frame_id)
     {
         history.points.clear();
     }
     marker.header = header;
+    history.run_id = run_id;
     marker.header.frame_id = frame;
     history.last_received_ns = stamp_ns;
     if (history.points.empty() || stamp_ns - history.last_sample_ns >= sample_period_ns_)

@@ -1,0 +1,13 @@
+# Internal simulation control. START points the interceptor at a world-frame position.
+uint8 START=0
+uint8 PAUSE=1
+uint8 RESET=2
+uint8 command
+geometry_msgs/Point target_position_m
+uint64 expected_run_id
+---
+bool success
+string message
+uint64 run_id
+# Timestamp of the next simulation sample after applying the command.
+builtin_interfaces/Time stamp

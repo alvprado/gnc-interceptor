@@ -21,6 +21,7 @@ private:
     struct Trail
     {
         std::deque<geometry_msgs::msg::Point> points;
+        std::uint64_t run_id{};
         std::int64_t last_received_ns{};
         std::int64_t last_sample_ns{};
     };
@@ -29,7 +30,7 @@ private:
     void interceptorCallback(gnc_interfaces::msg::InterceptorState::ConstSharedPtr state);
     void publishMarkers();
     void updateTrail(std_msgs::msg::Header const& header, geometry_msgs::msg::Point const& position,
-                     Trail& history, visualization_msgs::msg::Marker& marker);
+                     std::uint64_t run_id, Trail& history, visualization_msgs::msg::Marker& marker);
 
     rclcpp::Subscription<gnc_interfaces::msg::TargetState>::SharedPtr target_subscription_;
     rclcpp::Subscription<gnc_interfaces::msg::InterceptorState>::SharedPtr

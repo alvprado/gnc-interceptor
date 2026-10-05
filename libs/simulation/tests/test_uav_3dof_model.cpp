@@ -1,13 +1,12 @@
-#include "simulation/uav_3dof_model.hpp"
-
-#include "math/angles.hpp"
-#include "math/constants.hpp"
-#include "math/state_types.hpp"
-
 #include <gtest/gtest.h>
 
 #include <cmath>
 #include <numbers>
+
+#include "math/angles.hpp"
+#include "math/constants.hpp"
+#include "math/state_types.hpp"
+#include "simulation/uav_3dof_model.hpp"
 
 namespace simulation
 {
@@ -73,10 +72,8 @@ TEST_F(UAV3DofModelTest, ToVehicleStateMatchesPositionVelocityAndOrientation)
                                                make_control(0.0, 0.0, bank));
 
     EXPECT_TRUE(vehicle.cartesian.position_m.isApprox(Eigen::Vector3d{10.0, 20.0, 30.0}));
-    EXPECT_NEAR(vehicle.cartesian.velocity_mps.x(), v * std::cos(gamma) * std::cos(psi),
-               k_tol);
-    EXPECT_NEAR(vehicle.cartesian.velocity_mps.y(), v * std::cos(gamma) * std::sin(psi),
-               k_tol);
+    EXPECT_NEAR(vehicle.cartesian.velocity_mps.x(), v * std::cos(gamma) * std::cos(psi), k_tol);
+    EXPECT_NEAR(vehicle.cartesian.velocity_mps.y(), v * std::cos(gamma) * std::sin(psi), k_tol);
     EXPECT_NEAR(vehicle.cartesian.velocity_mps.z(), v * std::sin(gamma), k_tol);
     EXPECT_TRUE(vehicle.attitude.isApprox(math::attitudeFromHeadingPitchBank(psi, gamma, bank)));
 }
@@ -118,8 +115,8 @@ TEST_F(UAV3DofModelTest, SpeedRateIsThrustMinusDragMinusGravity)
     auto const dx =
         model_(make_state(0.0, 0.0, 0.0, v, 0.0, gamma), make_control(thrust, 1.0, 0.0));
 
-    double const expected = (thrust - drag_at(params_, v)) / params_.mass_kg -
-                            math::gravity_mps2 * std::sin(gamma);
+    double const expected =
+        (thrust - drag_at(params_, v)) / params_.mass_kg - math::gravity_mps2 * std::sin(gamma);
     EXPECT_NEAR(dx[3], expected, k_tol);
 }
 
@@ -265,3 +262,14 @@ TEST_F(UAV3DofModelTest, ClampStateLeavesPositionAlone)
 
 }  // namespace
 }  // namespace simulation
+
+TEST(UAV3DofLaunchTest, PreservesAttitudeAtRest)
+{
+    simulation::UAV3DofModel const model{simulation::UAV3DofModelParams{}};
+    math::VehicleState vehicle;
+    vehicle.attitude = math::attitudeFromHeadingPitchBank(0.7, 0.4, 0.0);
+    auto const state = model.fromVehicleState(vehicle);
+    EXPECT_DOUBLE_EQ(state[3], 0.0);
+    EXPECT_NEAR(state[4], 0.7, 1.0e-12);
+    EXPECT_NEAR(state[5], 0.4, 1.0e-12);
+}

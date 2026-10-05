@@ -91,10 +91,12 @@ TEST_F(EstimationNodeTest, PublishesValidEstimateAfterFirstMeasurement)
 {
     // The EKF is stateful: wait for discovery first, then publish the one real measurement
     // exactly once. Re-publishing it while waiting would apply repeated dt=0 corrections.
-    ASSERT_TRUE(spinUntil([&] {
-        return interceptor_pub_->get_subscription_count() > 0 &&
-               radar_pub_->get_subscription_count() > 0;
-    }));
+    ASSERT_TRUE(spinUntil(
+        [&]
+        {
+            return interceptor_pub_->get_subscription_count() > 0 &&
+                   radar_pub_->get_subscription_count() > 0;
+        }));
 
     interceptor_pub_->publish(makeInterceptorState());
     for (int i = 0; i < 5; ++i)
@@ -113,10 +115,12 @@ TEST_F(EstimationNodeTest, PublishesValidEstimateAfterFirstMeasurement)
 
 TEST_F(EstimationNodeTest, WaitsForMatchingPoseWhenRadarArrivesFirst)
 {
-    ASSERT_TRUE(spinUntil([&] {
-        return interceptor_pub_->get_subscription_count() > 0 &&
-               radar_pub_->get_subscription_count() > 0;
-    }));
+    ASSERT_TRUE(spinUntil(
+        [&]
+        {
+            return interceptor_pub_->get_subscription_count() > 0 &&
+                   radar_pub_->get_subscription_count() > 0;
+        }));
 
     auto measurement = makeRadarMeasurement(100.0);
     measurement.header.stamp.sec = 1;
@@ -143,10 +147,12 @@ TEST_F(EstimationNodeTest, WaitsForMatchingPoseWhenRadarArrivesFirst)
 
 TEST_F(EstimationNodeTest, UsesMatchingOlderPoseInsteadOfLatestPose)
 {
-    ASSERT_TRUE(spinUntil([&] {
-        return interceptor_pub_->get_subscription_count() > 0 &&
-               radar_pub_->get_subscription_count() > 0;
-    }));
+    ASSERT_TRUE(spinUntil(
+        [&]
+        {
+            return interceptor_pub_->get_subscription_count() > 0 &&
+                   radar_pub_->get_subscription_count() > 0;
+        }));
     auto matching_pose = makeInterceptorState();
     matching_pose.header.stamp.sec = 1;
     matching_pose.position_m.x = 25.0;
@@ -165,6 +171,46 @@ TEST_F(EstimationNodeTest, UsesMatchingOlderPoseInsteadOfLatestPose)
     radar_pub_->publish(measurement);
     ASSERT_TRUE(spinUntil([&] { return latest_estimate_.has_value(); }));
     EXPECT_NEAR(latest_estimate_->state.position_m.x, 125.0, 1.0e-6);
+}
+
+TEST_F(EstimationNodeTest, ReinitializesForNewRunAndRejectsOldRunMeasurements)
+{
+    ASSERT_TRUE(spinUntil(
+        [&]
+        {
+            return interceptor_pub_->get_subscription_count() > 0 &&
+                   radar_pub_->get_subscription_count() > 0;
+        }));
+    auto state = makeInterceptorState();
+    auto measurement = makeRadarMeasurement(100.0);
+    state.run_id = measurement.run_id = 1;
+    state.header.stamp.sec = measurement.header.stamp.sec = 1;
+    interceptor_pub_->publish(state);
+    radar_pub_->publish(measurement);
+    ASSERT_TRUE(spinUntil([&] { return latest_estimate_ && latest_estimate_->state.run_id == 1; }));
+    EXPECT_NEAR(latest_estimate_->state.position_m.x, 100.0, 1.0e-6);
+
+    state.run_id = measurement.run_id = 2;
+    state.header.stamp.sec = measurement.header.stamp.sec = 2;
+    state.position_m.x = 25.0;
+    measurement.range_m = 300.0;
+    interceptor_pub_->publish(state);
+    radar_pub_->publish(measurement);
+    ASSERT_TRUE(spinUntil([&] { return latest_estimate_->state.run_id == 2; }));
+    EXPECT_NEAR(latest_estimate_->state.position_m.x, 325.0, 1.0e-6);
+
+    state.run_id = measurement.run_id = 1;
+    state.header.stamp.sec = measurement.header.stamp.sec = 3;
+    measurement.range_m = 1000.0;
+    interceptor_pub_->publish(state);
+    radar_pub_->publish(measurement);
+    for (int i = 0; i < 20; ++i)
+    {
+        executor_.spin_some();
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+    EXPECT_EQ(latest_estimate_->state.run_id, 2U);
+    EXPECT_NEAR(latest_estimate_->state.position_m.x, 325.0, 1.0e-6);
 }
 
 }  // namespace

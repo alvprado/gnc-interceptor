@@ -19,9 +19,12 @@ PNController::PNController(PNControllerConfig const& config) noexcept
 Eigen::Vector3d PNController::step(math::CartesianState const& target,
                                    math::CartesianState const& interceptor, double) const noexcept
 {
-    if (interceptor.velocity_mps.norm() < config_.boost_phase_switch_speed_mps)
+    double const speed = interceptor.velocity_mps.norm();
+    if (speed < config_.boost_phase_switch_speed_mps)
     {
-        return Eigen::Vector3d{config_.boost_phase_thrust_n, 1.0, 0.0};
+        double const load =
+            speed > 1.0e-6 ? interceptor.velocity_mps.head<2>().norm() / speed : 1.0;
+        return Eigen::Vector3d{config_.boost_phase_thrust_n, load, 0.0};
     }
 
     double const thrust = thrust_control_law_.step(interceptor);

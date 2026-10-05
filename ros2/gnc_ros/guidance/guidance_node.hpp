@@ -28,7 +28,8 @@ private:
     [[nodiscard]] math::CartesianState targetStateAtInterceptorTime() const;
 
     // Subscribers
-    rclcpp::Subscription<gnc_interfaces::msg::InterceptorState>::SharedPtr interceptor_subscription_;
+    rclcpp::Subscription<gnc_interfaces::msg::InterceptorState>::SharedPtr
+        interceptor_subscription_;
     rclcpp::Subscription<gnc_interfaces::msg::TargetEstimate>::SharedPtr estimate_subscription_;
 
     // Publisher
@@ -39,7 +40,9 @@ private:
 
     // Components
     GuidanceConfig guidance_config_;
+    ControllerConfig const controller_config_;
     GuidanceController controller_;
+    std::uint64_t run_id_{0};
 
     // State
     gnc_interfaces::msg::InterceptorState::ConstSharedPtr interceptor_state_;

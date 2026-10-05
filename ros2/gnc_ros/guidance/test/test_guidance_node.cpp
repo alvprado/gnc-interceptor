@@ -5,8 +5,8 @@
 #include <optional>
 #include <thread>
 
-#include "guidance/guidance_node.hpp"
 #include "common/converters.hpp"
+#include "guidance/guidance_node.hpp"
 
 namespace
 {
@@ -28,8 +28,8 @@ protected:
             { latest_command_ = *command; });
         interceptor_pub_ = observer_->create_publisher<gnc_interfaces::msg::InterceptorState>(
             "interceptor/state", 10);
-        estimate_pub_ = observer_->create_publisher<gnc_interfaces::msg::TargetEstimate>(
-            "target/estimate", 10);
+        estimate_pub_ =
+            observer_->create_publisher<gnc_interfaces::msg::TargetEstimate>("target/estimate", 10);
 
         rclcpp::NodeOptions options;
         options.use_intra_process_comms(true);
@@ -91,11 +91,12 @@ TEST_F(GuidanceNodeTest, PublishesCommandOnceBothInputsAreAvailable)
 
     interceptor_pub_->publish(makeInterceptorState());
     // Re-publish each iteration: a one-shot publish can race intra-process subscription matching.
-    ASSERT_TRUE(spinUntil([&]
-    {
-        estimate_pub_->publish(makeValidEstimate(1, 490.0));
-        return latest_command_.has_value();
-    }));
+    ASSERT_TRUE(spinUntil(
+        [&]
+        {
+            estimate_pub_->publish(makeValidEstimate(1, 490.0));
+            return latest_command_.has_value();
+        }));
     EXPECT_TRUE(std::isfinite(latest_command_->thrust_n));
     EXPECT_TRUE(std::isfinite(latest_command_->load_factor));
     EXPECT_TRUE(std::isfinite(latest_command_->bank_angle_rad));
@@ -134,21 +135,75 @@ TEST_F(GuidanceNodeTest, ExtrapolatesTargetToInterceptorTimestamp)
     estimate.state.acceleration_mps2.y = 2.0;
 
     auto aligned_target = gnc_ros::fromMsg(estimate.state);
-    aligned_target.position_m += aligned_target.velocity_mps +
-                                 0.5 * aligned_target.acceleration_mps2;
+    aligned_target.position_m +=
+        aligned_target.velocity_mps + 0.5 * aligned_target.acceleration_mps2;
     aligned_target.velocity_mps += aligned_target.acceleration_mps2;
     auto controller = gnc_ros::makeGuidanceController(gnc_ros::ControllerConfig{});
-    auto const expected = controller.step(aligned_target,
-                                          gnc_ros::fromMsg(interceptor).cartesian, 0.1);
+    auto const expected =
+        controller.step(aligned_target, gnc_ros::fromMsg(interceptor).cartesian, 0.1);
 
-    ASSERT_TRUE(spinUntil([&] {
-        interceptor_pub_->publish(interceptor);
-        estimate_pub_->publish(estimate);
-        return latest_command_.has_value();
-    }));
+    ASSERT_TRUE(spinUntil(
+        [&]
+        {
+            interceptor_pub_->publish(interceptor);
+            estimate_pub_->publish(estimate);
+            return latest_command_.has_value();
+        }));
     EXPECT_NEAR(latest_command_->thrust_n, expected[0], 1.0e-9);
     EXPECT_NEAR(latest_command_->load_factor, expected[1], 1.0e-9);
     EXPECT_NEAR(latest_command_->bank_angle_rad, expected[2], 1.0e-9);
+}
+
+TEST_F(GuidanceNodeTest, NewRunResetsPredictiveBoostAndIgnoresOldInputs)
+{
+    executor_.remove_node(node_);
+    node_.reset();
+    rclcpp::NodeOptions options;
+    options.use_intra_process_comms(true);
+    options.parameter_overrides({{"controller.type", "predictive"},
+                                 {"controller.boost_phase_switch_speed_mps", 33.33},
+                                 {"controller.boost_phase_thrust_n", 30.0}});
+    node_ = std::make_shared<gnc_ros::GuidanceNode>(options);
+    executor_.add_node(node_);
+
+    auto state = makeInterceptorState();
+    auto estimate = makeValidEstimate(1, 400.0);
+    estimate.state.position_m.z = 100.0;
+    state.header.stamp.sec = 1;
+    state.run_id = estimate.state.run_id = 1;
+    state.velocity_mps.x = 40.0;
+    ASSERT_TRUE(spinUntil(
+        [&]
+        {
+            interceptor_pub_->publish(state);
+            estimate_pub_->publish(estimate);
+            return latest_command_ && latest_command_->run_id == 1;
+        }));
+    EXPECT_LT(latest_command_->thrust_n, 30.0);
+
+    state.run_id = estimate.state.run_id = 2;
+    state.velocity_mps.x = 0.0;
+    ASSERT_TRUE(spinUntil(
+        [&]
+        {
+            estimate_pub_->publish(estimate);
+            interceptor_pub_->publish(state);
+            return latest_command_->run_id == 2;
+        }));
+    EXPECT_DOUBLE_EQ(latest_command_->thrust_n, 30.0);
+    EXPECT_DOUBLE_EQ(latest_command_->load_factor, 1.0);
+
+    state.run_id = estimate.state.run_id = 1;
+    state.velocity_mps.x = 40.0;
+    for (int i = 0; i < 20; ++i)
+    {
+        interceptor_pub_->publish(state);
+        estimate_pub_->publish(estimate);
+        executor_.spin_some();
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+    EXPECT_EQ(latest_command_->run_id, 2U);
+    EXPECT_DOUBLE_EQ(latest_command_->thrust_n, 30.0);
 }
 
 }  // namespace

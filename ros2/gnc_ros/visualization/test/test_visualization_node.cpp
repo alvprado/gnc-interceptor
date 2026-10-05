@@ -63,12 +63,14 @@ protected:
         return nullptr;
     }
 
-    void publishTarget(double time_s, double x, std::string const& frame = "world")
+    void publishTarget(double time_s, double x, std::string const& frame = "world",
+                       std::uint64_t run_id = 0)
     {
         gnc_interfaces::msg::TargetState target;
         target.header.stamp = rclcpp::Time{static_cast<std::int64_t>(time_s * 1'000'000'000.0)};
         target.header.frame_id = frame;
         target.position_m.x = x;
+        target.run_id = run_id;
         latest_.reset();
         target_pub_->publish(target);
         ASSERT_TRUE(spinUntil([&] { return latest_.has_value(); }));
@@ -241,6 +243,30 @@ TEST_F(VisualizationNodeTest, HistoriesStayIndependent)
     EXPECT_DOUBLE_EQ(target->points.front().x, 10.0);
     EXPECT_DOUBLE_EQ(ego->points.front().x, 100.0);
     EXPECT_DOUBLE_EQ(ego->points.back().x, 200.0);
+}
+
+TEST_F(VisualizationNodeTest, NewRunClearsTrailsWithoutRewindingClock)
+{
+    publishTarget(1.0, 10.0, "world", 1);
+    publishTarget(2.0, 20.0, "world", 1);
+    publishTarget(3.0, 100.0, "world", 2);
+    auto const* trail = find(*latest_, "target_trail");
+    ASSERT_NE(trail, nullptr);
+    EXPECT_EQ(trail->action, visualization_msgs::msg::Marker::DELETE);
+    ASSERT_EQ(trail->points.size(), 1U);
+    EXPECT_DOUBLE_EQ(trail->points.front().x, 100.0);
+
+    gnc_interfaces::msg::TargetState old;
+    old.run_id = 1;
+    old.header.stamp.sec = 4;
+    old.position_m.x = 999.0;
+    target_pub_->publish(old);
+    for (int i = 0; i < 10; ++i)
+    {
+        executor_.spin_some();
+        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    }
+    EXPECT_DOUBLE_EQ(find(*latest_, "target")->pose.position.x, 100.0);
 }
 
 }  // namespace

@@ -1,4 +1,4 @@
-"""Launch the three GNC nodes as independent processes."""
+"""Launch the GNC nodes, ready to accept an interception action goal."""
 
 from pathlib import Path
 
@@ -27,6 +27,13 @@ def generate_launch_description():
             executable="simulation_node",
             name="simulation_node",
             parameters=[str(nodes_share / "simulation" / "config" / "defaults.yaml"), parameters],
+            output="screen",
+        ),
+        Node(
+            package="gnc_ros",
+            executable="interception_node",
+            name="interception_node",
+            parameters=[{"use_sim_time": True}],
             output="screen",
         ),
         Node(

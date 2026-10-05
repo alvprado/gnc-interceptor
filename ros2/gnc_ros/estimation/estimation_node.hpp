@@ -30,7 +30,8 @@ private:
     message_filters::Subscriber<gnc_interfaces::msg::InterceptorState> interceptor_subscription_;
     message_filters::Subscriber<gnc_interfaces::msg::RadarMeasurement> radar_subscription_;
     message_filters::TimeSynchronizer<gnc_interfaces::msg::InterceptorState,
-                                      gnc_interfaces::msg::RadarMeasurement> measurement_sync_{10};
+                                      gnc_interfaces::msg::RadarMeasurement>
+        measurement_sync_{10};
 
     // Publisher
     rclcpp::Publisher<gnc_interfaces::msg::TargetEstimate>::SharedPtr estimate_publisher_;
@@ -40,7 +41,9 @@ private:
 
     // Components
     EstimationConfig estimation_config_;
+    estimation::EKFTargetStateEstimationConfig const ekf_config_;
     estimation::EKFTargetStateEstimation ekf_;
+    std::uint64_t run_id_{0};
 };
 
 }  // namespace gnc_ros
