@@ -10,14 +10,18 @@
   <depend>autodiff</depend>
   <depend>builtin_interfaces</depend>
   <depend>eigen</depend>
+  <depend>geometry_msgs</depend>
   <depend>gnc_interfaces</depend>
+  <depend>message_filters</depend>
   <depend>rclcpp</depend>
   <depend>rcl_interfaces</depend>
   <depend>rclcpp_components</depend>
   <depend>rosgraph_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>tf2_ros</depend>
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>gtest</test_depend>
+  <test_depend>tf2_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

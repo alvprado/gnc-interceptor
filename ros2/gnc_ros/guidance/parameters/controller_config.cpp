@@ -37,7 +37,7 @@ ControllerConfig readControllerConfig(rclcpp::Node& node)
 {
     ControllerConfig config;
     config.type = controllerTypeFromString(
-        readParameter(node, prefix, "type", std::string{"proportional_navigation"}));
+        readParameter(node, prefix, "type", std::string{"pn"}));
 
     config.vehicle.mass_kg = readParameter(node, vehicle_prefix, "mass_kg", config.vehicle.mass_kg);
     config.vehicle.rho_kgpm3 =
@@ -74,6 +74,8 @@ ControllerConfig readControllerConfig(rclcpp::Node& node)
         node, prefix, "final_interception_weight", config.final_interception_weight);
     config.running_interception_weight = readParameter(
         node, prefix, "running_interception_weight", config.running_interception_weight);
+    config.d_scale_time_constant_s =
+        readParameter(node, prefix, "d_scale_time_constant_s", config.d_scale_time_constant_s);
     return config;
 }
 
@@ -95,6 +97,7 @@ GuidanceController makeGuidanceController(ControllerConfig const& config)
                                                     config.bank_rate_weight};
         predictive_config.final_interception_weight = config.final_interception_weight;
         predictive_config.running_interception_weight = config.running_interception_weight;
+        predictive_config.d_scale_time_constant_s = config.d_scale_time_constant_s;
         return GuidanceController{guidance::PredictiveGuidanceController{predictive_config}};
     }
 

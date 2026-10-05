@@ -5,6 +5,7 @@
 
 #include <cmath>
 
+#include "math/angles.hpp"
 #include "math/state_types.hpp"
 
 namespace estimation
@@ -132,7 +133,8 @@ void EKFTargetStateEstimation::correctionStep(sensor_model::SensorMeasurement co
     MeasurementVec const z{measurement.range_m, measurement.range_rate_mps, measurement.azimuth_rad,
                            measurement.elevation_rad};
 
-    MeasurementVec const y = z - measurementModel(state_estimate_, interceptor_state);
+    MeasurementVec y = z - measurementModel(state_estimate_, interceptor_state);
+    y[2] = math::wrapToPi(y[2]);
 
     state_estimate_ += kalman_gain * y;
     error_cov_ -= kalman_gain * H * error_cov_;

@@ -46,6 +46,7 @@ struct ControllerConfig
     double bank_rate_weight{2.0 / (std::numbers::pi * std::numbers::pi)};
     double final_interception_weight{10.0};
     double running_interception_weight{10.0};
+    double d_scale_time_constant_s{1.0};
 };
 
 /// @brief Type-erasing wrapper holding whichever guidance::GuidanceController is selected at

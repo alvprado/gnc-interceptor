@@ -1,7 +1,10 @@
+find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+
 add_library(gnc_visualization_node SHARED visualization_node.cpp)
 target_include_directories(gnc_visualization_node PRIVATE "${PROJECT_SOURCE_DIR}")
+target_link_libraries(gnc_visualization_node Eigen3::Eigen)
 ament_target_dependencies(gnc_visualization_node
-    rclcpp rclcpp_components gnc_interfaces visualization_msgs)
+    rclcpp rcl_interfaces rclcpp_components gnc_interfaces geometry_msgs visualization_msgs)
 
 rclcpp_components_register_node(gnc_visualization_node
     PLUGIN "gnc_ros::VisualizationNode" EXECUTABLE visualization_node)

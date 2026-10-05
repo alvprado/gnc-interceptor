@@ -7,6 +7,7 @@
 #include "gnc_interfaces/msg/target_estimate.hpp"
 #include "guidance/parameters/controller_config.hpp"
 #include "guidance/parameters/guidance_config.hpp"
+#include "math/state_types.hpp"
 
 namespace gnc_ros
 {
@@ -22,6 +23,9 @@ private:
     void interceptorStateCallback(gnc_interfaces::msg::InterceptorState::ConstSharedPtr state);
     void targetEstimateCallback(gnc_interfaces::msg::TargetEstimate::ConstSharedPtr estimate);
     void guidanceCallback();
+
+    /// @brief Extrapolate the target estimate to the current interceptor-state timestamp.
+    [[nodiscard]] math::CartesianState targetStateAtInterceptorTime() const;
 
     // Subscribers
     rclcpp::Subscription<gnc_interfaces::msg::InterceptorState>::SharedPtr interceptor_subscription_;

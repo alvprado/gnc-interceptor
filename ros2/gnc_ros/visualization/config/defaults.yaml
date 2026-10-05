@@ -1,3 +1,11 @@
 visualization_node:
   ros__parameters:
     use_sim_time: true
+    trail:
+      history_points: 300  # About 30 seconds at the default sampling interval.
+      sample_period_s: 0.1
+      width_m: 0.1
+    target:
+      diameter_m: 10.0
+    interceptor:
+      diameter_m: 10.0

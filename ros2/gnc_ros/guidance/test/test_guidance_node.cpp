@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "guidance/guidance_node.hpp"
+#include "common/converters.hpp"
 
 namespace
 {
@@ -119,6 +120,35 @@ TEST_F(GuidanceNodeTest, IgnoresNonValidEstimates)
         std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
     EXPECT_FALSE(latest_command_.has_value());
+}
+
+TEST_F(GuidanceNodeTest, ExtrapolatesTargetToInterceptorTimestamp)
+{
+    auto interceptor = makeInterceptorState();
+    interceptor.header.stamp.sec = 1;
+    interceptor.velocity_mps.x = 100.0;
+    auto estimate = makeValidEstimate(0, 500.0);
+    estimate.state.position_m.y = 20.0;
+    estimate.state.position_m.z = 30.0;
+    estimate.state.velocity_mps.y = 3.0;
+    estimate.state.acceleration_mps2.y = 2.0;
+
+    auto aligned_target = gnc_ros::fromMsg(estimate.state);
+    aligned_target.position_m += aligned_target.velocity_mps +
+                                 0.5 * aligned_target.acceleration_mps2;
+    aligned_target.velocity_mps += aligned_target.acceleration_mps2;
+    auto controller = gnc_ros::makeGuidanceController(gnc_ros::ControllerConfig{});
+    auto const expected = controller.step(aligned_target,
+                                          gnc_ros::fromMsg(interceptor).cartesian, 0.1);
+
+    ASSERT_TRUE(spinUntil([&] {
+        interceptor_pub_->publish(interceptor);
+        estimate_pub_->publish(estimate);
+        return latest_command_.has_value();
+    }));
+    EXPECT_NEAR(latest_command_->thrust_n, expected[0], 1.0e-9);
+    EXPECT_NEAR(latest_command_->load_factor, expected[1], 1.0e-9);
+    EXPECT_NEAR(latest_command_->bank_angle_rad, expected[2], 1.0e-9);
 }
 
 }  // namespace

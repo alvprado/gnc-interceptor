@@ -102,6 +102,24 @@ TEST_F(EKFTest, ZeroInnovationPreservesStateAndReducesUncertainty)
     }
 }
 
+TEST_F(EKFTest, AzimuthInnovationCrossesBranchCutInBothDirections)
+{
+    for (double const direction : {-1.0, 1.0})
+    {
+        EKFTargetStateEstimation filter{config_};
+        measurement_.azimuth_rad = direction * (std::acos(-1.0) - 0.001);
+        filter.processMeasurement(measurement_, observer_);
+        measurement_.azimuth_rad = -measurement_.azimuth_rad;
+        filter.processMeasurement(measurement_, observer_);
+
+        auto const output = filter.stateEstimateAt(measurement_.timestamp);
+        EXPECT_EQ(output.filter_status, EKFStatus::Valid);
+        EXPECT_NEAR(output.target_state_estimate.position_m.x(), -100.0, 0.001);
+        EXPECT_NEAR(output.target_state_estimate.position_m.y(), -direction * 0.1, 0.001);
+        EXPECT_LT(output.target_state_estimate.velocity_mps.norm(), 1.0e-9);
+    }
+}
+
 TEST_F(EKFTest, FutureQueryExtrapolatesConstantAccelerationWithoutChangingTrack)
 {
     filter_.processMeasurement(measurement_, observer_);

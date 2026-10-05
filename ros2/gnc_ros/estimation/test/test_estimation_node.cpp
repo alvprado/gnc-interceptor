@@ -111,4 +111,60 @@ TEST_F(EstimationNodeTest, PublishesValidEstimateAfterFirstMeasurement)
     EXPECT_TRUE(std::isfinite(latest_estimate_->covariance[0]));
 }
 
+TEST_F(EstimationNodeTest, WaitsForMatchingPoseWhenRadarArrivesFirst)
+{
+    ASSERT_TRUE(spinUntil([&] {
+        return interceptor_pub_->get_subscription_count() > 0 &&
+               radar_pub_->get_subscription_count() > 0;
+    }));
+
+    auto measurement = makeRadarMeasurement(100.0);
+    measurement.header.stamp.sec = 1;
+    radar_pub_->publish(measurement);
+    auto wrong_pose = makeInterceptorState();
+    wrong_pose.header.stamp.sec = 2;
+    wrong_pose.position_m.x = 1000.0;
+    interceptor_pub_->publish(wrong_pose);
+    for (int i = 0; i < 20; ++i)
+    {
+        executor_.spin_some();
+        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    }
+    EXPECT_FALSE(latest_estimate_.has_value());
+
+    auto matching_pose = makeInterceptorState();
+    matching_pose.header.stamp.sec = 1;
+    matching_pose.position_m.x = 25.0;
+    interceptor_pub_->publish(matching_pose);
+    ASSERT_TRUE(spinUntil([&] { return latest_estimate_.has_value(); }));
+    EXPECT_EQ(latest_estimate_->status, gnc_interfaces::msg::TargetEstimate::VALID);
+    EXPECT_NEAR(latest_estimate_->state.position_m.x, 125.0, 1.0e-6);
+}
+
+TEST_F(EstimationNodeTest, UsesMatchingOlderPoseInsteadOfLatestPose)
+{
+    ASSERT_TRUE(spinUntil([&] {
+        return interceptor_pub_->get_subscription_count() > 0 &&
+               radar_pub_->get_subscription_count() > 0;
+    }));
+    auto matching_pose = makeInterceptorState();
+    matching_pose.header.stamp.sec = 1;
+    matching_pose.position_m.x = 25.0;
+    interceptor_pub_->publish(matching_pose);
+    auto newer_pose = makeInterceptorState();
+    newer_pose.header.stamp.sec = 2;
+    newer_pose.position_m.x = 1000.0;
+    interceptor_pub_->publish(newer_pose);
+    for (int i = 0; i < 10; ++i)
+    {
+        executor_.spin_some();
+        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    }
+    auto measurement = makeRadarMeasurement(100.0);
+    measurement.header.stamp.sec = 1;
+    radar_pub_->publish(measurement);
+    ASSERT_TRUE(spinUntil([&] { return latest_estimate_.has_value(); }));
+    EXPECT_NEAR(latest_estimate_->state.position_m.x, 125.0, 1.0e-6);
+}
+
 }  // namespace

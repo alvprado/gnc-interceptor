@@ -1,19 +1,21 @@
 Panels:
   - Class: rviz_common/Displays
     Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
 Visualization Manager:
   Class: ""
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 245; 245; 245
     Fixed Frame: world
     Frame Rate: 30
   Displays:
     - Class: rviz_default_plugins/Grid
       Name: Ground grid
       Enabled: true
-      Cell Size: 250
+      Cell Size: 10
       Plane: XY
-      Plane Cell Count: 24
+      Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz_default_plugins/MarkerArray
@@ -34,13 +36,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 5000
+      Distance: 280
+      Target Frame: world
       Focal Point:
-        X: 1500
-        Y: 250
-        Z: 750
-      Pitch: 0.6
-      Yaw: 0.8
+        X: 60
+        Y: 50
+        Z: 60
+      Pitch: 0.7
+      Yaw: 2.164343
+    Saved:
+      - Class: rviz_default_plugins/Orbit
+        Name: Overview
+        Target Frame: world
+        Distance: 450
+        Focal Point:
+          X: 60
+          Y: 50
+          Z: 60
+        Pitch: 0.7
+        Yaw: 2.164343
 Window Geometry:
   Width: 1280
   Height: 800

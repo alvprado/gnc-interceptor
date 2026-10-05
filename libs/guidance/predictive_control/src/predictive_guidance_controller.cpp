@@ -29,7 +29,8 @@ PredictiveGuidanceController::PredictiveGuidanceController(
 }
 
 Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& target,
-                                                   math::CartesianState const& interceptor, double)
+                                                   math::CartesianState const& interceptor,
+                                                   double dt_s)
 {
     double const speed = interceptor.velocity_mps.norm();
 
@@ -50,8 +51,11 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
         new_buffer_length != target_predictions_.size())
     {
         target_predictions_.resize(new_buffer_length);
-        previous_control_trajectory_.resize(new_buffer_length);
-        previous_state_trajectory_.resize(new_buffer_length + 1);
+        if (!previous_control_trajectory_.empty())
+        {
+            auto const tail_control = previous_control_trajectory_.back();
+            previous_control_trajectory_.resize(new_buffer_length, tail_control);
+        }
     }
 
     predictTargetPositions(target);
@@ -60,7 +64,7 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
         UAV3DofModel{config_.model_params, speed}, config_.dt, ilqr::math::HeunStep{},
         ilqr::AutoDiff{});
 
-    double const d_scale = std::max((x0.head<3>() - target_predictions_[0]).norm(), min_d_scale_m);
+    double const d_scale = computeDistanceWeightScaling(x0.head<3>(), dt_s);
     Dims::StateMat R_interception = Dims::StateMat::Zero();
     R_interception.diagonal().head<3>().setConstant(config_.final_interception_weight /
                                                     (d_scale * d_scale));
@@ -112,6 +116,16 @@ Eigen::Vector3d PredictiveGuidanceController::step(math::CartesianState const& t
 
     Dims::ControlVec const u0 = result.trajectory.control(0);
     return Eigen::Vector3d{thrust_control_law_.step(interceptor), u0[0], u0[1]};
+}
+
+double PredictiveGuidanceController::computeDistanceWeightScaling(
+    Eigen::Vector3d const& interceptor_position, double dt_s) noexcept
+{
+    double const raw_d_scale =
+        std::max((interceptor_position - target_predictions_[0]).norm(), min_d_scale_m);
+    double const previous_d_scale = smoothed_d_scale_.value_or(raw_d_scale);
+    double const alpha = dt_s / (config_.d_scale_time_constant_s + dt_s);
+    return smoothed_d_scale_.emplace(previous_d_scale + alpha * (raw_d_scale - previous_d_scale));
 }
 
 int PredictiveGuidanceController::computeHorizonLenght(

@@ -50,6 +50,7 @@ TEST_F(ControllerConfigTest, ReadsPredictive)
         {"controller.dt", 0.2},
         {"controller.final_interception_weight", 5.0},
         {"controller.running_interception_weight", 1.0},
+        {"controller.d_scale_time_constant_s", 0.3},
     });
     EXPECT_EQ(config.type, gnc_ros::ControllerType::Predictive);
     EXPECT_EQ(config.horizon, 10);
@@ -57,6 +58,7 @@ TEST_F(ControllerConfigTest, ReadsPredictive)
     EXPECT_DOUBLE_EQ(config.dt, 0.2);
     EXPECT_DOUBLE_EQ(config.final_interception_weight, 5.0);
     EXPECT_DOUBLE_EQ(config.running_interception_weight, 1.0);
+    EXPECT_DOUBLE_EQ(config.d_scale_time_constant_s, 0.3);
 
     auto controller = gnc_ros::makeGuidanceController(config);
     math::CartesianState const target{{3000.0, 0.0, 0.0}, {-10.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
@@ -68,7 +70,7 @@ TEST_F(ControllerConfigTest, ReadsPredictive)
 TEST_F(ControllerConfigTest, ParametersAreReadOnlyAndSpecificToSelectedType)
 {
     rclcpp::NodeOptions options;
-    options.parameter_overrides({{"controller.type", "proportional_navigation"}});
+    options.parameter_overrides({{"controller.type", "pn"}});
     rclcpp::Node node{"controller_config_test", options};
     (void)gnc_ros::readControllerConfig(node);
     EXPECT_FALSE(node.has_parameter("controller.horizon"));

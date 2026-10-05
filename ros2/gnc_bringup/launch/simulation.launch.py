@@ -18,7 +18,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             "params_file",
-            default_value=str(share / "config" / "scenarios" / "figure_eight.yaml"),
+            default_value=str(share / "config" / "scenarios" / "scenario.yaml"),
             description="Scenario YAML overrides, applied after each node's defaults.",
         ),
         DeclareLaunchArgument("rviz", default_value="true", description="Open RViz."),

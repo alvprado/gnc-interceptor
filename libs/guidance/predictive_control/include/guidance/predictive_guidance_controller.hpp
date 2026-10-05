@@ -4,6 +4,7 @@
 #include <ilqr/core/config.hpp>
 #include <ilqr/core/types.hpp>
 #include <numbers>
+#include <optional>
 
 #include "guidance/controller_concept.hpp"
 #include "guidance/dynamics_model.hpp"
@@ -34,6 +35,8 @@ struct PredictiveGuidanceControllerConfig
     double final_interception_weight{10.0};  ///< Weight on the final interception error
     double running_interception_weight{
         10.0};  ///< Weight on the interception error accross the horizon
+    double d_scale_time_constant_s{1.0};  ///< Low-pass time constant on the interception cost's
+                                          ///< range normalization; 0 disables smoothing.
     ilqr::SolverConfig<double> solver_config{};  ///< iLQR iteration/regularization tuning
 };
 
@@ -52,9 +55,11 @@ public:
     /// @param[in] target The target's Cartesian state, used to predict its trajectory over the
     ///        horizon under a constant-velocity assumption.
     /// @param[in] interceptor The interceptor's Cartesian state.
+    /// @param[in] dt_s Time since the previous call; used to discretize the d_scale low-pass
+    ///        filter (@see PredictiveGuidanceControllerConfig::d_scale_time_constant_s).
     /// @returns [thrust, load_factor, bank_angle_rad].
     [[nodiscard]] Eigen::Vector3d step(math::CartesianState const& target,
-                                       math::CartesianState const& interceptor, double);
+                                       math::CartesianState const& interceptor, double dt_s);
 
 private:
     /// @brief Refresh target_predictions_ in place with the target's future positions at
@@ -77,13 +82,22 @@ private:
     int computeHorizonLenght(math::CartesianState const& target,
                              math::CartesianState const& interceptor) noexcept;
 
+    /// @brief Low-pass filtered miss distance used to normalize the interception cost weights,
+    /// updating and returning smoothed_d_scale_.
+    /// @param[in] interceptor_position The interceptor's current position.
+    /// @param[in] dt_s Time since the previous call, discretizing the low-pass filter.
+    /// @returns The smoothed distance, floored at min_d_scale_m.
+    [[nodiscard]] double computeDistanceWeightScaling(Eigen::Vector3d const& interceptor_position,
+                                                       double dt_s) noexcept;
+
     PredictiveGuidanceControllerConfig config_;
     ThrustControlLaw thrust_control_law_;
     ilqr::AlignedVec<Eigen::Vector3d> target_predictions_;
     ilqr::AlignedVec<Dims::ControlVec> previous_control_trajectory_;
     ilqr::AlignedVec<Dims::StateVec> previous_state_trajectory_;
-    bool has_exited_boost_{false};  ///< Latches true the first time boost is exited; prevents
-                                    ///< re-entering boost phase if speed drops
+    bool has_exited_boost_{false};    ///< Latches true the first time boost is exited; prevents
+                                      ///< re-entering boost phase if speed drops
+    std::optional<double> smoothed_d_scale_;  ///< Low-pass state for d_scale.
 };
 
 static_assert(GuidanceController<PredictiveGuidanceController>);

@@ -43,6 +43,17 @@ void GuidanceNode::targetEstimateCallback(
     target_estimate_state_ = std::move(estimate);
 }
 
+math::CartesianState GuidanceNode::targetStateAtInterceptorTime() const
+{
+    auto target = fromMsg(target_estimate_state_->state);
+    double const target_age_s = (fromMsg(interceptor_state_->header.stamp) -
+                                  fromMsg(target_estimate_state_->state.header.stamp)).count();
+    target.position_m += target_age_s * target.velocity_mps +
+                         0.5 * target_age_s * target_age_s * target.acceleration_mps2;
+    target.velocity_mps += target_age_s * target.acceleration_mps2;
+    return target;
+}
+
 void GuidanceNode::guidanceCallback()
 {
     bool const estimate_valid = target_estimate_state_ && target_estimate_state_->status ==
@@ -54,7 +65,7 @@ void GuidanceNode::guidanceCallback()
         return;
     }
 
-    auto const target = fromMsg(target_estimate_state_->state);
+    auto const target = targetStateAtInterceptorTime();
     auto const interceptor = fromMsg(*interceptor_state_).cartesian;
     auto const control = controller_.step(target, interceptor, guidance_config_.dt_s);
 

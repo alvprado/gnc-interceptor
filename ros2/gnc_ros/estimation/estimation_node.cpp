@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <rclcpp/create_timer.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
-#include <utility>
 
 #include "common/converters.hpp"
 
@@ -39,14 +38,10 @@ EstimationNode::EstimationNode(rclcpp::NodeOptions const& options)
       ekf_(makeEstimator(readEkfConfig(*this)))
 {
     auto const qos = rclcpp::QoS{10};
-    interceptor_subscription_ = create_subscription<gnc_interfaces::msg::InterceptorState>(
-        "interceptor/state", qos,
-        [this](gnc_interfaces::msg::InterceptorState::ConstSharedPtr state)
-        { interceptorStateCallback(std::move(state)); });
-    radar_subscription_ = create_subscription<gnc_interfaces::msg::RadarMeasurement>(
-        "radar/measurement", qos,
-        [this](gnc_interfaces::msg::RadarMeasurement::ConstSharedPtr measurement)
-        { radarMeasurementCallback(std::move(measurement)); });
+    interceptor_subscription_.subscribe(this, "interceptor/state", qos.get_rmw_qos_profile());
+    radar_subscription_.subscribe(this, "radar/measurement", qos.get_rmw_qos_profile());
+    measurement_sync_.connectInput(interceptor_subscription_, radar_subscription_);
+    measurement_sync_.registerCallback(&EstimationNode::measurementCallback, this);
     estimate_publisher_ =
         create_publisher<gnc_interfaces::msg::TargetEstimate>("target/estimate", qos);
 
@@ -55,22 +50,11 @@ EstimationNode::EstimationNode(rclcpp::NodeOptions const& options)
                                              [this] { estimationCallback(); });
 }
 
-void EstimationNode::interceptorStateCallback(
-    gnc_interfaces::msg::InterceptorState::ConstSharedPtr state)
-{
-    interceptor_state_ = std::move(state);
-}
-
-void EstimationNode::radarMeasurementCallback(
+void EstimationNode::measurementCallback(
+    gnc_interfaces::msg::InterceptorState::ConstSharedPtr state,
     gnc_interfaces::msg::RadarMeasurement::ConstSharedPtr measurement)
 {
-    if (!interceptor_state_)
-    {
-        RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000,
-                            "Dropping radar measurement: no interceptor state yet.");
-        return;
-    }
-    ekf_.processMeasurement(fromMsg(*measurement), fromMsg(*interceptor_state_));
+    ekf_.processMeasurement(fromMsg(*measurement), fromMsg(*state));
 }
 
 void EstimationNode::estimationCallback()

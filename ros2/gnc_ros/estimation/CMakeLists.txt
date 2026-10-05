@@ -4,7 +4,7 @@ add_library(gnc_estimation_node SHARED
     parameters/estimation_config.cpp)
 target_include_directories(gnc_estimation_node PRIVATE "${PROJECT_SOURCE_DIR}")
 ament_target_dependencies(gnc_estimation_node
-    rclcpp rcl_interfaces rclcpp_components gnc_interfaces)
+    rclcpp rcl_interfaces rclcpp_components gnc_interfaces message_filters)
 target_link_libraries(gnc_estimation_node
     gnc_ros_converters
     gnc::target_state_estimation)

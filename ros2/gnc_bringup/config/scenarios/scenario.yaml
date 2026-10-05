@@ -1,0 +1,86 @@
+simulation_node:
+  ros__parameters:
+    use_sim_time: true
+    simulation:
+      dt_s: 0.01 
+      integration_method: rk4  # rk4, heun or euler
+    interceptor:
+      mass_kg: 2.5
+      min_thrust_n: 0.0
+      max_thrust_n: 150.0
+      min_load_factor: -3.0
+      max_load_factor: 9.0
+      max_bank_angle_rad: 3.141592653589793
+      min_speed_mps: 1.0
+      max_speed_mps: 112.5
+    sensor:
+      range_var: 250.0
+      range_rate_var: 8.0
+      azimuth_var: 8.0e-6
+      elevation_var: 8.0e-6
+    target:
+      # Only parameters used by the selected trajectory type are read
+      type: figure_eight
+      # Constant velocity.
+      position_m: [500.0, 100.0, 150.0]
+      velocity_mps: [30.0, 0.0, 0.0]
+      # Shared by figure eight, circle and helix
+      center_m: [200.0, 50.0, 100.0]
+      normal: [1.0, 0.0, 1.0]
+      reference_direction: [0.0, -1.0, 0.0]
+      # Figure eight
+      length_m: 100.0
+      width_m: 50.0
+      angular_rate_rps: 0.39
+      # Circle and helix
+      speed_mps: 50.0
+      load_factor: 1.0
+      # Helix.
+      climb_angle_rad: 0.1
+guidance_node:
+  ros__parameters:
+    guidance:
+      dt_s: 0.1
+    controller:
+      # Only parameters used by the selected controller type are read.
+      type: predictive   # pn or predictive
+      # Shared by both controllers.
+      min_load_factor: -3.0
+      max_load_factor: 9.0
+      max_bank_angle_rad: 3.141592653589793
+      # Trim thrust holds whatever speed the interceptor has at hand-off, so
+      # this sets its cruise speed: ~120 kph, a bit above the target's.
+      boost_phase_switch_speed_mps: 33.33
+      boost_phase_thrust_n: 30.0
+      # Proportional navigation.
+      navigation_gain: 3.0
+      # Predictive (iLQR).
+      horizon: 50
+      min_horizon: 5
+      dt: 0.1  # iLQR horizon step
+      load_factor_rate_weight: 0.024691358024691357  # 2 / 9^2
+      bank_rate_weight: 0.2026423672846752  # 2 / pi^2
+      final_interception_weight: 10.0
+      running_interception_weight: 10.0
+      d_scale_time_constant_s: 1.0  
+estimation_node:
+  ros__parameters:
+    use_sim_time: true
+    estimation:
+      dt_s: 0.1
+    ekf:
+      jerk_noise_var: 10.0
+      sensor_noise_var: [100.0, 4.0, 4.0e-6, 4.0e-6]
+      initial_position_var: 10000.0
+      initial_velocity_var: 40000.0
+      initial_acceleration_var: 400.0
+visualization_node:
+  ros__parameters:
+    trail:
+      history_points: 300  # About 30 seconds at the default sampling interval.
+      sample_period_s: 0.1
+      width_m: 1.0
+    target:
+      diameter_m: 5.0
+    interceptor:
+      diameter_m: 5.0
