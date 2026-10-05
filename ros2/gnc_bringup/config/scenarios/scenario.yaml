@@ -25,13 +25,13 @@ simulation_node:
       position_m: [500.0, 100.0, 150.0]
       velocity_mps: [30.0, 0.0, 0.0]
       # Shared by figure eight, circle and helix
-      center_m: [200.0, 50.0, 100.0]
+      center_m: [200.0, 25.0, 150.0]
       normal: [1.0, 0.0, 1.0]
       reference_direction: [0.0, -1.0, 0.0]
       # Figure eight
       length_m: 100.0
       width_m: 50.0
-      angular_rate_rps: 0.39
+      angular_rate_rps: 0.5
       # Circle and helix
       speed_mps: 50.0
       load_factor: 1.0

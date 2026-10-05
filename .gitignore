@@ -10,3 +10,4 @@ __pycache__/
 install/
 log/
 *.mp4
+*.webm

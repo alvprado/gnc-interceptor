@@ -36,7 +36,9 @@ Out-of-scope for this project: full rigid-body 6DOF dynamics and low-level attit
 
 ## ROS2 integration
 
-<img src="docs/media/ros_interception.gif" width="660" alt="RViz visualization of a ROS2 interception run showing interceptor and target trajectories">
+<p align="center">
+  <img src="docs/media/ros_interception.gif" width="1000" alt="RViz visualization of a ROS2 interception run showing interceptor and target trajectories">
+</p>
 
 The same simulation, estimation, and guidance libraries are also wrapped as ROS2 nodes under [`ros2/`](ros2/), composed into an end-to-end interception pipeline: a simulation node propagates the interceptor and target ground truth and publishes noisy radar measurements, an estimation node consumes those measurements and publishes EKF target estimates, a guidance node turns those estimates into PN or iLQR commands, and an interception node runs the scenario behind an `Intercept` action server (success when the miss distance drops below a threshold, timing out after a max duration) with a `SimulationControl` service for starting, pausing, and resetting runs. RViz is used for live visualization of trajectories, states, and sensor returns.
 
