@@ -1,6 +1,6 @@
 # GNC Interceptor
 
-A modern C++ project for exploring guidance, navigation, and control (GNC) in a simulated 3D interception scenario. A point-mass interceptor follows a moving target using proportional navigation (PN) or predictive guidance based on iterative Linear Quadratic Regulator (iLQR) optimization.
+A modern C++ project for exploring guidance, navigation, and control (GNC) in a simulated 3D interception scenario. A point-mass interceptor follows a moving target using proportional navigation (PN) or predictive guidance based on iterative Linear Quadratic Regulator (iLQR) optimization. The stack runs both as a standalone C++ executable and as a ROS2 integration.
 
 The code separates vehicle simulation, target trajectories, sensor modeling, state estimation, and guidance into reusable libraries. 
 
@@ -25,7 +25,40 @@ The simulator's internal state is `[x, y, z, speed, heading, flight_path_angle]`
 
 Out-of-scope for this project: full rigid-body 6DOF dynamics and low-level attitude control are outside its scope. Aerodynamic effects are neglected, only a simple drag model is used in simulation. The interceptor state is assumed to be perfectly known. Sensor model is unbiased.
 
-## Example 
+## Dependencies
+
+- A C++20 compiler and a native build tool such as Make or Ninja.
+- **CMake 3.23 or newer**.
+- **Eigen 3.4 or newer**, discoverable as `Eigen3` by CMake.
+- **ilqr-cpp**, the iLQR library, auto-fetched by CMake.
+- **autodiff**, installed with its CMake package and `autodiff::autodiff` target. Predictive guidance requires it; it is not fetched automatically.
+- **ROS2 Jazzy**, only required to run the [ROS2 integration](#ros2-integration). The `desktop` install is recommended, since it includes RViz; the minimal `ros-base` install additionally requires `ros-jazzy-rviz2`.
+
+## ROS2 integration
+
+<img src="docs/media/ros_interception.gif" width="660" alt="RViz visualization of a ROS2 interception run showing interceptor and target trajectories">
+
+The same simulation, estimation, and guidance libraries are also wrapped as ROS2 nodes under [`ros2/`](ros2/), composed into an end-to-end interception pipeline: a simulation node propagates the interceptor and target ground truth and publishes noisy radar measurements, an estimation node consumes those measurements and publishes EKF target estimates, a guidance node turns those estimates into PN or iLQR commands, and an interception node runs the scenario behind an `Intercept` action server (success when the miss distance drops below a threshold, timing out after a max duration) with a `SimulationControl` service for starting, pausing, and resetting runs. RViz is used for live visualization of trajectories, states, and sensor returns.
+
+Build the workspace and launch the simulation, from `ros2/`:
+
+```sh
+source /opt/ros/jazzy/setup.bash
+colcon build
+source install/setup.bash
+ros2 launch gnc_bringup simulation.launch.py
+```
+
+With the launch file running, trigger an interception attempt in another terminal:
+
+```sh
+ros2 action send_goal /interception/start gnc_interfaces/action/Intercept \
+  "{interception_distance_m: 1.0, max_interception_time_s: 60.0}"
+```
+
+## Standalone
+
+### Example
 
 The target performs a figure-eight maneuver in a tilted plane. The interceptor starts at the origin with an initial boost-phase and the iLQR-based predictive guidance is used to intercept the target, with target states estimated by the EKF from noisy radar measurements. The plots show the trajectories, estimation performance, and interceptor states and controls.
 
@@ -35,21 +68,7 @@ The target performs a figure-eight maneuver in a tilted plane. The interceptor s
 
 <img src="docs/media/standalone_vehicle.png" width="750" alt="Interceptor speed, heading, flight-path angle, thrust, load factor, and bank angle">
 
-## ROS2 integration
-
-The same simulation, estimation, and guidance libraries are also wrapped as ROS2 nodes under [`ros2/`](ros2/), composed into an end-to-end interception pipeline: a simulation node propagates the interceptor and target ground truth and publishes noisy radar measurements, an estimation node consumes those measurements and publishes EKF target estimates, a guidance node turns those estimates into PN or iLQR commands, and an interception node runs the scenario behind an `Intercept` action server (success when the miss distance drops below a threshold, timing out after a max duration) with a `SimulationControl` service for starting, pausing, and resetting runs. RViz is used for live visualization of trajectories, states, and sensor returns.
-
-<img src="docs/media/ros_interception.gif" width="660" alt="RViz visualization of a ROS2 interception run showing interceptor and target trajectories">
-
-## Build
-
-Prerequisites:
-
-- A C++20 compiler and a native build tool such as Make or Ninja.
-- **CMake 3.23 or newer**.
-- **Eigen 3.4 or newer**, discoverable as `Eigen3` by CMake.
-- **ilqr-cpp**, the iLQR library, auto-fetched by CMake.
-- **autodiff**, installed with its CMake package and `autodiff::autodiff` target. Predictive guidance requires it; it is not fetched automatically.
+### Build
 
 From the repository root:
 
@@ -58,9 +77,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build --target standalone 
 ```
 
-
-
-## Run the simulation
+### Run
 
 Run from the repository root:
 
@@ -69,7 +86,7 @@ mkdir -p standalone/outputs
 ./build/standalone/standalone
 ```
 
-## Plot results
+### Visualize
 
 The plotting script requires Python 3.9 or newer, NumPy, pandas, and Matplotlib:
 
